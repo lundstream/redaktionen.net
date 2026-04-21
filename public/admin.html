@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redaktionen — Admin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --bg-elevated: #161b22; --card: #1c2128; --text: #e6edf3; --muted: #8b949e;
+      --light: #6e7681; --border: #30363d; --accent: #58a6ff; --accent-light: rgba(88,166,255,.15);
+      --green: #3fb950; --green-bg: rgba(63,185,80,.1); --orange: #d29922; --orange-bg: rgba(210,153,34,.1);
+      --blue: #79c0ff; --blue-bg: rgba(121,192,255,.1); --red: #f85149; --red-bg: rgba(248,81,73,.1);
+      --purple: #bc8cff; --purple-bg: rgba(188,140,255,.1);
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,.3); --shadow-lg: 0 8px 24px rgba(0,0,0,.4);
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --sans: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); }
+
+    /* --- Header --- */
+    header { background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+    .header-inner {
+      max-width: 1360px; margin: 0 auto; padding: 20px 40px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    header h1 { font-family: var(--mono); font-size: 1.5rem; font-weight: 700; letter-spacing: -.5px; }
+    header h1 a { color: var(--text); text-decoration: none; }
+    header h1 .prompt { color: var(--accent); }
+    .links { display: flex; gap: 18px; align-items: center; }
+    .links a { color: var(--muted); text-decoration: none; font-size: .85rem; font-weight: 500; }
+    .links a:hover { color: var(--text); }
+    #logout-link { color: var(--red); }
+
+    /* --- Login --- */
+    #login-view { display: flex; justify-content: center; align-items: center; height: calc(100vh - 80px); }
+    .login-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; max-width: 360px; width: 100%; box-shadow: var(--shadow); }
+    .login-box h2 { font-family: var(--mono); font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
+    .login-box input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: .9rem; margin-bottom: 12px; background: var(--bg); color: var(--text); }
+    .login-box button { width: 100%; padding: 10px; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-size: .9rem; cursor: pointer; font-weight: 600; }
+    .login-box button:hover { opacity: .9; }
+    .login-box .err { color: var(--red); font-size: .8rem; margin-top: 8px; display: none; }
+
+    /* --- Dashboard --- */
+    #admin-view { display: none; max-width: 1360px; margin: 0 auto; padding: 28px 40px 40px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .toolbar h2 { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; }
+    .toolbar .actions { display: flex; gap: 8px; }
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: .82rem; cursor: pointer; font-weight: 600; transition: all .2s; }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-green { background: var(--green); color: #fff; }
+    .btn-muted { background: var(--border); color: var(--text); }
+    .btn-blue { background: var(--blue); color: var(--bg); }
+    .btn-orange { background: var(--orange); color: #fff; }
+    .btn-sm { padding: 4px 10px; font-size: .75rem; }
+
+    /* --- Stats bar --- */
+    .stats-bar { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; flex: 1; min-width: 140px; box-shadow: var(--shadow); }
+    .stat-card .label { font-size: .68rem; color: var(--light); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; margin-bottom: 4px; font-family: var(--mono); }
+    .stat-card .value { font-family: var(--mono); font-size: 1.8rem; font-weight: 700; color: var(--text); }
+
+    /* --- Tabs --- */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab { padding: 10px 18px; background: none; border: none; cursor: pointer; font-size: .85rem; color: var(--light); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab:hover { color: var(--text); }
+
+    /* --- Table --- */
+    .article-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .article-table th { text-align: left; padding: 12px 16px; font-size: .68rem; text-transform: uppercase; letter-spacing: .8px; color: var(--light); border-bottom: 1px solid var(--border); font-weight: 600; font-family: var(--mono); }
+    .article-table td { padding: 12px 16px; font-size: .85rem; border-bottom: 1px solid var(--border); }
+    .article-table tr:last-child td { border-bottom: none; }
+    .article-table tr:hover { background: var(--bg-elevated); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+    .badge-draft { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+    .badge-pending { background: var(--orange-bg); color: var(--orange); }
+    .badge-approved { background: var(--green-bg); color: var(--green); }
+    .badge-rejected { background: var(--red-bg); color: var(--red); }
+    .cat-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: .68rem; font-weight: 600; background: var(--blue-bg); color: var(--blue); font-family: var(--mono); }
+
+    /* --- Editor modal --- */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; justify-content: center; align-items: flex-start; padding: 40px 20px; overflow-y: auto; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card); border-radius: var(--radius); max-width: 800px; width: 100%; padding: 32px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+    .modal h3 { margin-bottom: 20px; font-family: var(--mono); font-size: 1rem; font-weight: 700; }
+    .modal label { display: block; font-size: .72rem; font-weight: 600; color: var(--light); margin-bottom: 4px; margin-top: 14px; text-transform: uppercase; letter-spacing: .5px; font-family: var(--mono); }
+    .modal input, .modal select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .88rem; background: var(--bg); color: var(--text); }
+    .modal textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .88rem; min-height: 200px; resize: vertical; font-family: var(--sans); line-height: 1.6; background: var(--bg); color: var(--text); }
+    .modal .btn-row { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+
+    /* --- Sources --- */
+    .source-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .source-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; }
+    .source-card .info h4 { font-size: .9rem; margin-bottom: 2px; }
+    .source-card .info p { font-size: .75rem; color: var(--light); }
+
+    /* --- Logs --- */
+    .log-list { font-size: .82rem; }
+    .log-entry { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .log-header { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+    .log-header:hover { opacity: .8; }
+    .log-entry .agent { font-weight: 600; min-width: 120px; color: var(--accent); }
+    .log-entry .action { color: var(--muted); }
+    .log-entry .time { color: var(--light); font-size: .75rem; margin-left: auto; white-space: nowrap; }
+    .log-toggle { font-size: .7rem; color: var(--light); cursor: pointer; margin-left: 4px; }
+    .log-detail { display: none; margin-top: 8px; padding: 10px 14px; background: var(--bg); border-radius: 8px; font-size: .8rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; max-height: 400px; overflow-y: auto; border: 1px solid var(--border); }
+    .log-detail.open { display: block; }
+    .log-detail-label { font-weight: 600; color: var(--blue); font-size: .7rem; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; margin-top: 10px; font-family: var(--mono); }
+    .log-detail-label:first-child { margin-top: 0; }
+    .log-detail-text { color: var(--text); }
+    .log-model { font-size: .68rem; color: var(--light); background: var(--border); padding: 1px 6px; border-radius: 4px; }
+    .log-tokens { font-size: .68rem; color: var(--light); }
+    .log-more-btn { margin-top: 12px; text-align: center; }
+
+    /* --- Messages --- */
+    .msg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 12px; box-shadow: var(--shadow); }
+    .msg-card.unread { border-left: 3px solid var(--accent); }
+    .msg-card .msg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .msg-card .msg-from { font-weight: 600; font-size: .9rem; }
+    .msg-card .msg-email { color: var(--light); font-size: .78rem; }
+    .msg-card .msg-time { color: var(--light); font-size: .72rem; }
+    .msg-card .msg-body { font-size: .88rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+    .msg-card .msg-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+    .empty { color: var(--light); padding: 40px; text-align: center; font-style: italic; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 900px) { #admin-view { padding: 0 16px 24px; } .header-inner { padding: 16px; } }
+  </style>
+</head>
+<body>
+
+<header><div class="header-inner">
+  <h1><a href="/"><span class="prompt">&gt;</span> redaktionen</a> · Admin</h1>
+  <div class="links">
+    <a href="/">127.0.0.1</a>
+    <a href="/tech">tech</a>
+    <a href="/hardware">hardware</a>
+    <a href="/ai">ai</a>
+    <a href="/enterprise">enterprise</a>
+    <a href="#" id="logout-link" style="display:none">Logga ut</a>
+  </div>
+</div></header>
+
+<!-- LOGIN -->
+<div id="login-view">
+  <div class="login-box">
+    <h2>Logga in</h2>
+    <input type="text" id="user-input" placeholder="Användarnamn">
+    <input type="password" id="pwd-input" placeholder="Lösenord">
+    <button onclick="doLogin()">Logga in</button>
+    <div class="err" id="login-err">Fel lösenord</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-view">
+  <div class="stats-bar">
+    <div class="stat-card"><div class="label">Kö</div><div class="value" id="stat-queue">0</div></div>
+    <div class="stat-card"><div class="label">Publicerade</div><div class="value" id="stat-approved">0</div></div>
+    <div class="stat-card"><div class="label">Utkast</div><div class="value" id="stat-draft">0</div></div>
+    <div class="stat-card"><div class="label">Avvisade</div><div class="value" id="stat-rejected">0</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="queue">Kö</button>
+    <button class="tab" data-tab="all">Alla artiklar</button>
+    <button class="tab" data-tab="sources">Källor</button>
+    <button class="tab" data-tab="logs">Logg</button>
+    <button class="tab" data-tab="messages">Meddelanden <span id="msg-badge" style="display:none;background:var(--red);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;"></span></button>
+    <button class="tab" data-tab="users">Användare</button>
+  </div>
+
+  <!-- Queue tab -->
+  <div class="tab-panel" id="panel-queue">
+    <div class="toolbar">
+      <h2>Väntande artiklar</h2>
+      <div class="actions">
+        <button class="btn" style="background:var(--red-bg);color:var(--red)" onclick="clearQueue()">Rensa kö</button>
+        <button class="btn btn-primary" onclick="triggerCycle()" id="btn-scan"><span class="spinner" style="display:none" id="scan-spin"></span>Kör nyhetscykel</button>
+        <button class="btn" style="background:var(--purple-bg);color:var(--purple)" onclick="triggerChronicle()" id="btn-chronicle"><span class="spinner" style="display:none" id="chronicle-spin"></span>Kör krönikor</button>
+        <button class="btn" style="background:#1a3a2a;color:var(--green)" onclick="publishAll()">Publicera alla</button>
+      </div>
+    </div>
+    <div id="queue-content"></div>
+  </div>
+
+  <!-- All articles tab -->
+  <div class="tab-panel" id="panel-all" style="display:none">
+    <div class="toolbar">
+      <h2>Alla artiklar</h2>
+      <div class="actions">
+        <button class="btn" style="background:var(--red-bg);color:var(--red)" onclick="deleteAllRejected()">Ta bort alla avvisade</button>
+      </div>
+    </div>
+    <div id="all-content"></div>
+  </div>
+
+  <!-- Sources tab -->
+  <div class="tab-panel" id="panel-sources" style="display:none">
+    <div class="toolbar">
+      <h2>Nyhetskällor</h2>
+      <button class="btn btn-blue" onclick="showAddSource()">+ Lägg till källa</button>
+    </div>
+    <div class="source-list" id="sources-content"></div>
+  </div>
+
+  <!-- Logs tab -->
+  <div class="tab-panel" id="panel-logs" style="display:none">
+    <div class="toolbar"><h2>Agent-logg</h2></div>
+    <div class="log-list" id="logs-content"></div>
+  </div>
+
+  <!-- Messages tab -->
+  <div class="tab-panel" id="panel-messages" style="display:none">
+    <div class="toolbar"><h2>Meddelanden</h2></div>
+    <div id="messages-content"></div>
+  </div>
+
+  <!-- Users tab -->
+  <div class="tab-panel" id="panel-users" style="display:none">
+    <div class="toolbar">
+      <h2>Administratörer</h2>
+      <button class="btn btn-blue" onclick="showAddUser()">+ Lägg till användare</button>
+    </div>
+    <div id="users-content"></div>
+  </div>
+</div>
+
+<!-- Editor modal -->
+<div class="modal-overlay" id="editor-modal">
+  <div class="modal">
+    <h3 id="editor-title">Redigera artikel</h3>
+    <label>Rubrik</label>
+    <input id="ed-title">
+    <label>Kategori</label>
+    <select id="ed-category">
+      <option value="tech">Tech</option>
+      <option value="hardware">Hardware</option>
+      <option value="ai">AI</option>
+      <option value="enterprise">Enterprise</option>
+    </select>
+    <label>Ingress</label>
+    <textarea id="ed-summary" style="min-height:80px"></textarea>
+    <label>Brödtext</label>
+    <textarea id="ed-body"></textarea>
+    <label>Byline</label>
+    <input id="ed-byline">
+    <div id="ed-image-preview" style="margin:8px 0;display:none">
+      <label>Bild</label>
+      <img id="ed-image-thumb" style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid var(--border);display:block;margin:4px 0">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-orange" onclick="regenerateImage()" id="ed-regen-btn">Generera ny bild</button>
+      <button class="btn btn-muted" onclick="closeEditor()">Avbryt</button>
+      <button class="btn btn-blue" onclick="saveArticle()">Spara</button>
+      <button class="btn btn-green" onclick="saveAndApprove()">Spara & publicera</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add source modal -->
+<div class="modal-overlay" id="source-modal">
+  <div class="modal">
+    <h3>Lägg till källa</h3>
+    <label>Namn</label>
+    <input id="src-name" placeholder="t.ex. Ars Technica">
+    <label>Typ</label>
+    <select id="src-type">
+      <option value="rss">RSS</option>
+      <option value="webpage">Webbsida</option>
+    </select>
+    <label>URL</label>
+    <input id="src-url" placeholder="https://...">
+    <label>Kategori</label>
+    <select id="src-category">
+      <option value="tech">Tech</option>
+      <option value="hardware">Hardware</option>
+      <option value="ai">AI</option>
+      <option value="enterprise">Enterprise</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn btn-muted" onclick="closeSourceModal()">Avbryt</button>
+      <button class="btn btn-blue" onclick="addSource()">Lägg till</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add user modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <h3>Lägg till administratör</h3>
+    <label>Användarnamn</label>
+    <input id="new-user-name" placeholder="t.ex. anna">
+    <label>Lösenord</label>
+    <input id="new-user-pwd" type="password" placeholder="Minst 6 tecken">
+    <div class="btn-row">
+      <button class="btn btn-muted" onclick="closeUserModal()">Avbryt</button>
+      <button class="btn btn-blue" onclick="addUser()">Lägg till</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change password modal -->
+<div class="modal-overlay" id="pwd-modal">
+  <div class="modal">
+    <h3>Byt lösenord</h3>
+    <label>Nytt lösenord</label>
+    <input id="change-pwd" type="password" placeholder="Minst 6 tecken">
+    <div class="btn-row">
+      <button class="btn btn-muted" onclick="closePwdModal()">Avbryt</button>
+      <button class="btn btn-blue" onclick="changePassword()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Auth ----
+let authHeader = sessionStorage.getItem('authHeader') || '';
+let editingId = null;
+
+if (authHeader) {
+  api('GET', '/api/admin/stats').then(() => {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-view').style.display = 'block';
+    document.getElementById('logout-link').style.display = 'inline';
+    refresh();
+  }).catch(() => {
+    authHeader = '';
+    sessionStorage.removeItem('authHeader');
+  });
+}
+
+function doLogin() {
+  const user = document.getElementById('user-input').value;
+  const pwd = document.getElementById('pwd-input').value;
+  authHeader = 'Basic ' + btoa(user + ':' + pwd);
+  api('GET', '/api/admin/stats').then(() => {
+    sessionStorage.setItem('authHeader', authHeader);
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-view').style.display = 'block';
+    document.getElementById('logout-link').style.display = 'inline';
+    document.getElementById('login-err').style.display = 'none';
+    refresh();
+  }).catch(async () => {
+    const errEl = document.getElementById('login-err');
+    try {
+      const r = await fetch('/api/admin/stats', { headers: { 'Authorization': authHeader } });
+      if (!r.ok) {
+        const d = await r.json().catch(() => null);
+        errEl.textContent = d?.error || 'Fel användarnamn eller lösenord';
+      }
+    } catch { errEl.textContent = 'Fel användarnamn eller lösenord'; }
+    errEl.style.display = 'block';
+  });
+}
+
+document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('user-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('pwd-input').focus(); });
+document.getElementById('logout-link').addEventListener('click', e => {
+  e.preventDefault();
+  authHeader = '';
+  sessionStorage.removeItem('authHeader');
+  document.getElementById('login-view').style.display = 'flex';
+  document.getElementById('admin-view').style.display = 'none';
+  document.getElementById('logout-link').style.display = 'none';
+});
+
+// ---- API ----
+async function api(method, url, body) {
+  const opts = { method, headers: { 'Authorization': authHeader } };
+  if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const r = await fetch(url, opts);
+  if (!r.ok) {
+    const d = await r.json().catch(() => null);
+    throw new Error(d?.error || r.statusText);
+  }
+  return r.json();
+}
+
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.style.display = 'none');
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).style.display = 'block';
+  });
+});
+
+// ---- Refresh ----
+async function refresh() {
+  try {
+    const [stats, queue, all, sources, logs, msgData, users] = await Promise.all([
+      api('GET', '/api/admin/stats'),
+      api('GET', '/api/admin/queue'),
+      api('GET', '/api/admin/articles'),
+      api('GET', '/api/admin/sources'),
+      api('GET', '/api/admin/logs?limit=100&offset=0'),
+      api('GET', '/api/admin/messages'),
+      api('GET', '/api/admin/users'),
+    ]);
+    try { renderStats(stats); } catch(e) { console.error('renderStats', e); }
+    try { renderQueue(queue); } catch(e) { console.error('renderQueue', e); }
+    try { renderAll(all); } catch(e) { console.error('renderAll', e); }
+    try { renderSources(sources); } catch(e) { console.error('renderSources', e); }
+    try { renderLogs(logs, 0); } catch(e) { console.error('renderLogs', e); }
+    try { renderMessages(msgData); } catch(e) { console.error('renderMessages', e); }
+    try { renderUsers(users); } catch(e) { console.error('renderUsers', e); }
+  } catch (e) {
+    console.error('Refresh error:', e);
+  }
+}
+
+function renderStats(s) {
+  const m = s.counts || {};
+  document.getElementById('stat-queue').textContent = (m.draft || 0) + (m.pending || 0);
+  document.getElementById('stat-approved').textContent = m.approved || 0;
+  document.getElementById('stat-draft').textContent = m.draft || 0;
+  document.getElementById('stat-rejected').textContent = m.rejected || 0;
+}
+
+function badgeFor(status) { return `<span class="badge badge-${status}">${status}</span>`; }
+function catBadge(cat) {
+  const labels = { tech: 'Tech', hardware: 'Hardware', ai: 'AI', enterprise: 'Enterprise' };
+  return `<span class="cat-badge">${labels[cat] || cat}</span>`;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = d.endsWith('Z') ? new Date(d) : new Date(d + 'Z');
+  return dt.toLocaleDateString('sv-SE') + ' ' + dt.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderQueue(items) {
+  if (!items.length) {
+    document.getElementById('queue-content').innerHTML = '<p class="empty">Inga artiklar i kön. Kör en nyhetscykel!</p>';
+    return;
+  }
+  document.getElementById('queue-content').innerHTML = `<table class="article-table">
+    <thead><tr><th>Rubrik</th><th>Kategori</th><th>Status</th><th>Skapad</th><th></th></tr></thead>
+    <tbody>${items.map(a => `<tr>
+      <td><strong>${esc(a.title)}</strong><br><small style="color:var(--muted)">${esc((a.summary || '').slice(0, 80))}</small></td>
+      <td>${catBadge(a.category)}</td>
+      <td>${badgeFor(a.status)}</td>
+      <td style="white-space:nowrap">${fmtDate(a.created_at)}</td>
+      <td style="white-space:nowrap">
+        <a href="/artikel/${a.id}/preview" target="_blank" class="btn btn-orange btn-sm">Förhandsvisning</a>
+        <button class="btn btn-green btn-sm" onclick="approve(${a.id})">Publicera</button>
+        <button class="btn btn-muted btn-sm" onclick="openEditor(${a.id})">Redigera</button>
+        ${a.status === 'draft' || (a.body || '').includes('[FAKTAKOLL:') ? `<button class="btn btn-blue btn-sm" onclick="rewriteArticle(${a.id})" id="rewrite-btn-${a.id}">Skriv om</button>` : ''}
+        <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="reject(${a.id})">Avvisa</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderAll(items) {
+  if (!items.length) {
+    document.getElementById('all-content').innerHTML = '<p class="empty">Inga artiklar ännu.</p>';
+    return;
+  }
+  document.getElementById('all-content').innerHTML = `<table class="article-table">
+    <thead><tr><th>Rubrik</th><th>Kategori</th><th>Status</th><th>Skapad</th><th></th></tr></thead>
+    <tbody>${items.map(a => `<tr>
+      <td><strong>${esc(a.title)}</strong></td>
+      <td>${catBadge(a.category)}</td>
+      <td>${badgeFor(a.status)}</td>
+      <td style="white-space:nowrap">${fmtDate(a.created_at)}</td>
+      <td style="white-space:nowrap">
+        <a href="${a.status === 'approved' ? `/artikel/${a.id}` : `/artikel/${a.id}/preview`}" target="_blank" class="btn ${a.status === 'approved' ? 'btn-green' : 'btn-orange'} btn-sm">${a.status === 'approved' ? 'Visa' : 'Förhandsvisning'}</a>
+        <button class="btn btn-muted btn-sm" onclick="openEditor(${a.id})">Redigera</button>
+        <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="deleteArticle(${a.id})">Ta bort</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function renderSources(items) {
+  if (!items.length) {
+    document.getElementById('sources-content').innerHTML = '<p class="empty">Inga källor konfigurerade.</p>';
+    return;
+  }
+  document.getElementById('sources-content').innerHTML = items.map(s => `
+    <div class="source-card">
+      <div class="info">
+        <h4>${esc(s.name)}</h4>
+        <p>${s.type} · ${catBadge(s.category)}</p>
+        <p style="margin-top:2px;word-break:break-all">${esc(s.url)}</p>
+      </div>
+      <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="deleteSource(${s.id})">Ta bort</button>
+    </div>
+  `).join('');
+}
+
+let logOffset = 0;
+function renderLogs(items, offset) {
+  logOffset = offset;
+  if (!items.length && offset === 0) {
+    document.getElementById('logs-content').innerHTML = '<p class="empty">Inga loggposter ännu.</p>';
+    return;
+  }
+  const html = items.map((l, i) => {
+    const id = 'log-detail-' + offset + '-' + i;
+    const hasDetail = l.input_text || l.output_text;
+    return `
+    <div class="log-entry">
+      <div class="log-header" ${hasDetail ? `onclick="document.getElementById('${id}').classList.toggle('open')"` : ''}>
+        <span class="agent">${esc(l.agent)}</span>
+        <span class="action">${esc(l.action)} ${l.article_id ? `(artikel #${l.article_id})` : ''}</span>
+        ${l.model ? `<span class="log-model">${esc(l.model)}</span>` : ''}
+        ${l.tokens_used ? `<span class="log-tokens">${l.tokens_used} tokens</span>` : ''}
+        <span class="time">${fmtDate(l.created_at)}</span>
+        ${hasDetail ? '<span class="log-toggle">▼</span>' : ''}
+      </div>
+      ${hasDetail ? `<div class="log-detail" id="${id}">
+        ${l.input_text ? `<div class="log-detail-label">Input / Prompt</div><div class="log-detail-text">${esc(l.input_text)}</div>` : ''}
+        ${l.output_text ? `<div class="log-detail-label">Output / Tankeprocess</div><div class="log-detail-text">${esc(l.output_text)}</div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+
+  const moreBtn = items.length >= 100 ? `<div class="log-more-btn"><button class="btn btn-muted" onclick="loadMoreLogs()">Ladda fler...</button></div>` : '';
+
+  if (offset === 0) {
+    document.getElementById('logs-content').innerHTML = html + moreBtn;
+  } else {
+    const el = document.getElementById('logs-content');
+    const oldBtn = el.querySelector('.log-more-btn');
+    if (oldBtn) oldBtn.remove();
+    el.insertAdjacentHTML('beforeend', html + moreBtn);
+  }
+}
+
+async function loadMoreLogs() {
+  try {
+    const newOffset = logOffset + 100;
+    const logs = await api('GET', `/api/admin/logs?limit=100&offset=${newOffset}`);
+    renderLogs(logs, newOffset);
+  } catch (e) { console.error('Load more logs error:', e); }
+}
+
+// ---- Actions ----
+async function approve(id) {
+  const btns = document.querySelectorAll(`button[onclick="approve(${id})"]`);
+  btns.forEach(b => { b.disabled = true; b.innerHTML = '<span class="spinner"></span>Publicerar...'; });
+  try {
+    const result = await api('POST', `/api/admin/articles/${id}/approve`);
+    if (result.imageError) alert(`Artikeln publicerades, men bilden kunde inte skapas:\n${result.imageError}`);
+    refresh();
+  } catch (e) {
+    alert('Fel vid publicering: ' + e.message);
+    btns.forEach(b => { b.disabled = false; b.textContent = 'Publicera'; });
+  }
+}
+
+async function reject(id) {
+  if (!confirm('Avvisa denna artikel?')) return;
+  await api('POST', `/api/admin/articles/${id}/reject`);
+  refresh();
+}
+
+async function rewriteArticle(id) {
+  if (!confirm('Skriv om artikeln med Researcher → Reporter → Redigerare → Faktakoll?')) return;
+  const btn = document.getElementById('rewrite-btn-' + id);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Skriver om...'; }
+  try {
+    const result = await api('POST', `/api/admin/articles/${id}/rewrite`);
+    const verdictMap = { 'godkänd': 'Godkänd', 'varning': 'Varning', 'underkänd': 'Underkänd' };
+    const label = verdictMap[result.verdict] || result.verdict;
+    const msg = `Omskrivning klar!\n\nFaktakoll: ${label}` + (result.issues?.length ? `\n\nProblem:\n- ${result.issues.join('\n- ')}` : '');
+    alert(msg);
+    refresh();
+  } catch (e) {
+    alert('Omskrivning misslyckades: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Skriv om'; }
+  }
+}
+
+async function deleteArticle(id) {
+  if (!confirm('Ta bort denna artikel permanent?')) return;
+  try { await api('DELETE', `/api/admin/articles/${id}`); refresh(); } catch (e) { alert('Kunde inte ta bort artikeln: ' + e.message); }
+}
+
+async function deleteAllRejected() {
+  if (!confirm('Ta bort ALLA avvisade artiklar permanent?')) return;
+  try {
+    const result = await api('DELETE', '/api/admin/articles-bulk/rejected');
+    alert(`${result.deleted} avvisade artiklar borttagna.`);
+    refresh();
+  } catch (e) { alert('Fel: ' + e.message); }
+}
+
+async function clearQueue() {
+  if (!confirm('Rensa hela kön? Alla väntande/utkast-artiklar tas bort permanent.')) return;
+  try {
+    const result = await api('DELETE', '/api/admin/articles-bulk/queue');
+    alert(`${result.deleted} artiklar borttagna från kön.`);
+    refresh();
+  } catch (e) { alert('Fel: ' + e.message); }
+}
+
+async function deleteSource(id) {
+  if (!confirm('Ta bort denna källa?')) return;
+  await api('DELETE', `/api/admin/sources/${id}`);
+  refresh();
+}
+
+async function triggerCycle() {
+  const btn = document.getElementById('btn-scan');
+  const spin = document.getElementById('scan-spin');
+  btn.disabled = true; spin.style.display = 'inline-block';
+  try {
+    const result = await api('POST', '/api/admin/scan');
+    if (result.error) {
+      alert('Nyhetscykel misslyckades: ' + result.error);
+    } else {
+      alert(`Cykel klar! ${result.articles || 0} nya artiklar, ${result.leads || 0} leads behandlade.`);
+    }
+    refresh();
+  } catch (e) { alert('Fel: ' + e.message); }
+  finally { btn.disabled = false; spin.style.display = 'none'; }
+}
+
+async function publishAll() {
+  try {
+    const result = await api('POST', '/api/admin/publish-all');
+    alert(`${result.published || 0} artiklar publicerade.`);
+    refresh();
+  } catch (e) { alert('Fel: ' + e.message); }
+}
+
+async function triggerChronicle() {
+  const btn = document.getElementById('btn-chronicle');
+  const spin = document.getElementById('chronicle-spin');
+  btn.disabled = true; spin.style.display = 'inline-block';
+  try {
+    const result = await api('POST', '/api/admin/chronicle');
+    if (result.error) {
+      alert('Krönikegenerering misslyckades: ' + result.error);
+    } else {
+      alert('Krönikor skapade och schemalagda!');
+    }
+    refresh();
+  } catch (e) { alert('Fel: ' + e.message); }
+  finally { btn.disabled = false; spin.style.display = 'none'; }
+}
+
+// ---- Editor ----
+async function openEditor(id) {
+  try {
+    const a = await api('GET', `/api/admin/articles/${id}`);
+    editingId = id;
+    document.getElementById('ed-title').value = a.title || '';
+    document.getElementById('ed-category').value = a.category || 'tech';
+    document.getElementById('ed-summary').value = a.summary || '';
+    document.getElementById('ed-body').value = a.body || '';
+    document.getElementById('ed-byline').value = a.byline || '';
+    const preview = document.getElementById('ed-image-preview');
+    const thumb = document.getElementById('ed-image-thumb');
+    if (a.image_url) { thumb.src = a.image_url; preview.style.display = ''; } else { preview.style.display = 'none'; }
+    document.getElementById('editor-modal').classList.add('open');
+  } catch (e) { alert('Kunde inte ladda artikeln'); }
+}
+
+function closeEditor() { document.getElementById('editor-modal').classList.remove('open'); editingId = null; }
+
+async function saveArticle() {
+  if (!editingId) return;
+  await api('PUT', `/api/admin/articles/${editingId}`, {
+    title: document.getElementById('ed-title').value,
+    category: document.getElementById('ed-category').value,
+    summary: document.getElementById('ed-summary').value,
+    body: document.getElementById('ed-body').value,
+    byline: document.getElementById('ed-byline').value,
+  });
+  closeEditor(); refresh();
+}
+
+async function regenerateImage() {
+  if (!editingId) return;
+  const btn = document.getElementById('ed-regen-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Genererar...';
+  try {
+    const result = await api('POST', `/api/admin/articles/${editingId}/regenerate-image`);
+    if (result.image_url) {
+      document.getElementById('ed-image-thumb').src = result.image_url + '?t=' + Date.now();
+      document.getElementById('ed-image-preview').style.display = '';
+    } else { alert('Bilden kunde inte genereras.'); }
+  } catch (e) { alert('Bildgenerering misslyckades: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Generera ny bild';
+}
+
+async function saveAndApprove() {
+  if (!editingId) return;
+  await api('PUT', `/api/admin/articles/${editingId}`, {
+    title: document.getElementById('ed-title').value,
+    category: document.getElementById('ed-category').value,
+    summary: document.getElementById('ed-summary').value,
+    body: document.getElementById('ed-body').value,
+    byline: document.getElementById('ed-byline').value,
+    status: 'approved',
+  });
+  closeEditor(); refresh();
+}
+
+// ---- Sources ----
+function showAddSource() { document.getElementById('source-modal').classList.add('open'); }
+function closeSourceModal() { document.getElementById('source-modal').classList.remove('open'); }
+
+async function addSource() {
+  await api('POST', '/api/admin/sources', {
+    name: document.getElementById('src-name').value,
+    type: document.getElementById('src-type').value,
+    url: document.getElementById('src-url').value,
+    category: document.getElementById('src-category').value,
+  });
+  closeSourceModal(); refresh();
+}
+
+// ---- Messages ----
+function renderMessages(data) {
+  const badge = document.getElementById('msg-badge');
+  if (data.unread > 0) { badge.textContent = data.unread; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
+  const msgs = data.messages || [];
+  if (!msgs.length) { document.getElementById('messages-content').innerHTML = '<p class="empty">Inga meddelanden ännu.</p>'; return; }
+  document.getElementById('messages-content').innerHTML = msgs.map(m => `
+    <div class="msg-card ${m.read ? '' : 'unread'}">
+      <div class="msg-header"><div><span class="msg-from">${esc(m.name)}</span> <span class="msg-email">&lt;${esc(m.email)}&gt;</span></div><span class="msg-time">${fmtDate(m.created_at)}</span></div>
+      <div class="msg-body">${esc(m.message)}</div>
+      <div class="msg-actions">
+        ${!m.read ? `<button class="btn btn-blue btn-sm" onclick="markMsgRead(${m.id})">Markera läst</button>` : ''}
+        <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="deleteMsg(${m.id})">Ta bort</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function markMsgRead(id) { await api('POST', `/api/admin/messages/${id}/read`); refresh(); }
+async function deleteMsg(id) { if (!confirm('Ta bort detta meddelande?')) return; await api('DELETE', `/api/admin/messages/${id}`); refresh(); }
+
+// ---- Users ----
+function renderUsers(items) {
+  if (!items.length) { document.getElementById('users-content').innerHTML = '<p class="empty">Inga användare.</p>'; return; }
+  document.getElementById('users-content').innerHTML = `<table class="article-table">
+    <thead><tr><th>Användarnamn</th><th>Roll</th><th>Skapad</th><th></th></tr></thead>
+    <tbody>${items.map(u => `<tr>
+      <td><strong>${esc(u.username)}</strong></td>
+      <td><span class="badge badge-approved">${esc(u.role)}</span></td>
+      <td style="white-space:nowrap">${fmtDate(u.created_at)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-blue btn-sm" onclick="showChangePwd(${u.id})">Byt lösenord</button>
+        <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="deleteUser(${u.id})">Ta bort</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function showAddUser() { document.getElementById('user-modal').classList.add('open'); }
+function closeUserModal() { document.getElementById('user-modal').classList.remove('open'); }
+
+async function addUser() {
+  const username = document.getElementById('new-user-name').value.trim();
+  const password = document.getElementById('new-user-pwd').value;
+  if (!username || !password) return alert('Fyll i alla fält');
+  try {
+    await api('POST', '/api/admin/users', { username, password });
+    closeUserModal();
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-pwd').value = '';
+    refresh();
+  } catch (e) { alert(e.message); }
+}
+
+let changePwdUserId = null;
+function showChangePwd(id) { changePwdUserId = id; document.getElementById('pwd-modal').classList.add('open'); }
+function closePwdModal() { document.getElementById('pwd-modal').classList.remove('open'); changePwdUserId = null; }
+
+async function changePassword() {
+  if (!changePwdUserId) return;
+  const password = document.getElementById('change-pwd').value;
+  if (!password) return alert('Ange ett lösenord');
+  try {
+    await api('PUT', `/api/admin/users/${changePwdUserId}/password`, { password });
+    closePwdModal();
+    document.getElementById('change-pwd').value = '';
+    alert('Lösenordet har ändrats');
+  } catch (e) { alert(e.message); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Ta bort denna användare?')) return;
+  try { await api('DELETE', `/api/admin/users/${id}`); refresh(); } catch (e) { alert(e.message); }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+</script>
+</body>
+</html>

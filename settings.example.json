@@ -1,0 +1,19 @@
+{
+  "github_token": "",
+  "model": "gpt-4o",
+  "model_overrides": {
+    "managing_editor": "gpt-4o",
+    "researcher": "gpt-4o-mini",
+    "reporter": "gpt-4o",
+    "copy_editor": "gpt-4o-mini",
+    "fact_checker": "gpt-4o",
+    "rewrite": "gpt-4o",
+    "graphic_designer": "gpt-4o-mini"
+  },
+  "openai_key": "",
+  "kie_api_key": "",
+  "brave_search_key": "",
+  "admin_password": "change-me",
+  "scan_interval": 28800,
+  "articles_per_cycle": 5
+}
