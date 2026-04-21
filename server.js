@@ -493,6 +493,7 @@ function pageShell(title, activeCat, bodyHtml) {
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1715654756257886" crossorigin="anonymous"></script>
 <style>
   :root {
     --bg: #0d1117; --bg-elevated: #161b22; --card: #1c2128; --text: #e6edf3; --muted: #8b949e;
@@ -507,9 +508,15 @@ function pageShell(title, activeCat, bodyHtml) {
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  header { background: var(--bg-elevated); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-  .header-inner {
+  header { position: sticky; top: 0; z-index: 100; background: var(--bg); }
+  .header-top { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .header-top-inner {
     max-width: 1360px; margin: 0 auto; padding: 20px 40px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .header-nav-bar { background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+  .header-nav-inner {
+    max-width: 1360px; margin: 0 auto; padding: 10px 40px;
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
   header h1 { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--text); letter-spacing: -.5px; line-height: 1.2; }
@@ -526,11 +533,16 @@ function pageShell(title, activeCat, bodyHtml) {
   nav a:hover { color: var(--text); background: var(--accent-dim); }
   nav a:hover::after { opacity: 1; animation: blink 1s step-end infinite; }
   nav a.active { color: var(--accent); background: var(--accent-dim); }
-  .header-right { text-align: right; display: flex; align-items: center; gap: 10px; }
-  .header-right .clock { font-size: .85rem; color: var(--muted); font-family: var(--mono); font-weight: 400; }
-  #search-toggle { background: none; border: 1px solid var(--border); color: var(--muted); font-size: .8rem; font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family: var(--mono); transition: all .15s; }
-  #search-toggle:hover { color: var(--text); background: var(--accent-dim); border-color: var(--accent); }
+  .header-clock { font-size: .85rem; color: var(--muted); font-family: var(--mono); font-weight: 400; }
+  .header-search { position: relative; }
+  .header-search input { width: 260px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 32px 6px 12px; color: var(--text); font-family: var(--sans); font-size: .85rem; outline: none; transition: border-color .15s; }
+  .header-search input:focus { border-color: var(--accent); }
+  .header-search input::placeholder { color: var(--light); }
+  .header-search .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--light); font-family: var(--mono); font-size: .85rem; pointer-events: none; }
+  .header-search-results { position: absolute; top: calc(100% + 6px); right: 0; width: 380px; max-width: 90vw; max-height: 60vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); display: none; z-index: 200; }
+  .header-search-results.open { display: block; }
   .search-result-item { display: block; text-decoration: none; color: var(--text); padding: 12px 18px; border-bottom: 1px solid var(--border); transition: background .1s; }
+  .search-result-item:last-child { border-bottom: none; }
   .search-result-item:hover { background: var(--accent-dim); }
   .search-result-item h4 { font-size: .92rem; font-weight: 600; margin: 0; line-height: 1.35; }
   .cat-tag { display: inline-block; font-family: var(--mono); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 2px 8px; border-radius: 4px; line-height: 1; white-space: nowrap; }
@@ -539,7 +551,7 @@ function pageShell(title, activeCat, bodyHtml) {
   .cat-hardware { color: var(--accent); border: 1px solid var(--accent); }
   .cat-enterprise { color: var(--red); border: 1px solid var(--red); }
   .ad-label { font-family: var(--mono); text-align: center; font-size: .6rem; color: var(--light); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; margin-top: 24px; margin-bottom: 6px; }
-  .ad-banner { background: var(--accent-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 28px; text-align: center; font-size: .9rem; font-weight: 500; color: var(--text); margin-bottom: 24px; }
+  .ad-banner { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 28px; text-align: center; font-size: .9rem; font-weight: 500; color: var(--text); margin-bottom: 24px; }
   .ad-banner a { color: var(--accent); font-weight: 600; text-decoration: none; margin-left: 6px; }
   .ad-banner a:hover { text-decoration: underline; }
   .ad-slot { background: var(--bg-elevated); border: 1px dashed var(--border); border-radius: var(--radius); padding: 20px; margin: 20px 0; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; }
@@ -556,37 +568,33 @@ function pageShell(title, activeCat, bodyHtml) {
   .footer-tagline { color: var(--light); font-size: .75rem; }
   .footer-tagline a { color: var(--accent); }
   .mob-br { display: none; }
-  @media (max-width: 900px) { .header-inner { padding: 14px 16px; flex-direction: column; gap: 8px; align-items: stretch; } header h1 { font-size: 1.4rem; } .header-sub { font-size: .78rem; } .header-tagline { font-size: .65rem; } .header-right { display: none; } nav { flex-wrap: wrap; justify-content: flex-start; } nav a { font-size: .72rem; padding: 5px 8px; } footer { padding: 0 16px 28px; } .footer-tagline { text-align: center; } .mob-br { display: block; } .mob-hide { display: none; } }
+  @media (max-width: 900px) { .header-top-inner { padding: 14px 16px; flex-direction: column; gap: 8px; align-items: stretch; } .header-nav-inner { padding: 8px 16px; flex-direction: column; gap: 8px; align-items: stretch; } header h1 { font-size: 1.4rem; } .header-sub { font-size: .78rem; } .header-tagline { font-size: .65rem; } .header-clock { display: none; } .header-search input { width: 100%; } .header-search-results { width: 100%; right: 0; } nav { flex-wrap: wrap; justify-content: flex-start; } nav a { font-size: .72rem; padding: 5px 8px; } footer { padding: 0 16px 28px; } .footer-tagline { text-align: center; } .mob-br { display: block; } .mob-hide { display: none; } }
 </style>
 </head><body>
-<header><div class="header-inner">
-  <div>
-    <h1><a href="/"><span class="prompt">&gt;</span> redaktionen<span class="cursor">_</span></a></h1>
-    <div class="header-sub">tech-nyheter.</div>
-    <div class="header-tagline">snabbt. nördigt. <span class="green">ai-drivet.</span></div>
-  </div>
-  <nav>
-    <a href="/" ${activeCat === 'hem' ? 'class="active"' : ''}>127.0.0.1</a>
-    <a href="/tech" ${activeCat === 'tech' ? 'class="active"' : ''}>tech</a>
-    <a href="/hardware" ${activeCat === 'hardware' ? 'class="active"' : ''}>hardware</a>
-    <a href="/ai" ${activeCat === 'ai' ? 'class="active"' : ''}>ai</a>
-    <a href="/enterprise" ${activeCat === 'enterprise' ? 'class="active"' : ''}>enterprise</a>
-  </nav>
-  <div class="header-right">
-    <button id="search-toggle" onclick="toggleSearch()" title="Sök">⌕</button>
-    <div class="clock" id="clock"></div>
-  </div>
-</div></header>
-<div id="search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;justify-content:center;align-items:flex-start;padding-top:min(20vh,160px);backdrop-filter:blur(4px);" onclick="if(event.target===this)toggleSearch()">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);width:90%;max-width:580px;box-shadow:var(--shadow-lg);overflow:hidden;">
-    <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:10px;">
-      <span style="color:var(--accent);font-family:var(--mono);font-weight:700;font-size:.8rem;">⌕</span>
-      <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" style="flex:1;background:none;border:none;outline:none;font-size:1rem;color:var(--text);font-family:var(--sans);">
-      <kbd style="font-family:var(--mono);font-size:.6rem;color:var(--light);background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border);">ESC</kbd>
+<header>
+  <div class="header-top"><div class="header-top-inner">
+    <div>
+      <h1><a href="/"><span class="prompt">&gt;</span> redaktionen<span class="cursor">_</span></a></h1>
+      <div class="header-sub">tech-nyheter.</div>
+      <div class="header-tagline">snabbt. nördigt. <span class="green">ai-drivet.</span></div>
     </div>
-    <div id="search-results" style="max-height:60vh;overflow-y:auto;"></div>
-  </div>
-</div>
+    <div class="header-clock" id="clock"></div>
+  </div></div>
+  <div class="header-nav-bar"><div class="header-nav-inner">
+    <nav>
+      <a href="/" ${activeCat === 'hem' ? 'class="active"' : ''}>127.0.0.1</a>
+      <a href="/tech" ${activeCat === 'tech' ? 'class="active"' : ''}>tech</a>
+      <a href="/hardware" ${activeCat === 'hardware' ? 'class="active"' : ''}>hardware</a>
+      <a href="/ai" ${activeCat === 'ai' ? 'class="active"' : ''}>ai</a>
+      <a href="/enterprise" ${activeCat === 'enterprise' ? 'class="active"' : ''}>enterprise</a>
+    </nav>
+    <div class="header-search">
+      <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" onfocus="if(this.value.trim().length>=2)document.getElementById('search-results').classList.add('open')">
+      <span class="search-icon">⌕</span>
+      <div id="search-results" class="header-search-results"></div>
+    </div>
+  </div></div>
+</header>
 <script>
 (function updateClock(){
   const d=new Date();
@@ -598,32 +606,32 @@ function escHtml(s){ const d=document.createElement('div'); d.textContent=s||'';
 function parseTs(ts){ if(!ts) return null; return new Date(ts.endsWith('Z')?ts:ts+'Z'); }
 function dayKey(d){ return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit',day:'2-digit'}).format(d); }
 function fmtDate(ts){ const d=parseTs(ts); if(!d) return ''; if(dayKey(d)===dayKey(new Date())) return 'Today '+d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/Stockholm'}); return d.toLocaleDateString('sv-SE',{month:'short',day:'numeric',timeZone:'Europe/Stockholm'}); }
-function toggleSearch(){
-  const overlay=document.getElementById('search-overlay');
-  const isOpen=overlay.style.display==='flex';
-  overlay.style.display=isOpen?'none':'flex';
-  if(!isOpen){ document.getElementById('search-input').value=''; document.getElementById('search-results').innerHTML=''; setTimeout(()=>document.getElementById('search-input').focus(),50); }
-}
 let searchTimeout;
 function handleSearch(e){
   clearTimeout(searchTimeout);
   const q=e.target.value.trim();
-  if(q.length<2){ document.getElementById('search-results').innerHTML=''; return; }
+  const resultsEl=document.getElementById('search-results');
+  if(q.length<2){ resultsEl.innerHTML=''; resultsEl.classList.remove('open'); return; }
   searchTimeout=setTimeout(async()=>{
     try {
       const r=await fetch('/api/search?q='+encodeURIComponent(q));
       const articles=await r.json();
-      if(!articles.length){ document.getElementById('search-results').innerHTML='<div style="color:var(--muted);padding:20px;text-align:center;">Inga resultat</div>'; return; }
-      document.getElementById('search-results').innerHTML=articles.map(a=>{
+      if(!articles.length){ resultsEl.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center;">Inga resultat</div>'; resultsEl.classList.add('open'); return; }
+      resultsEl.innerHTML=articles.map(a=>{
         const d=fmtDate(a.published_at||a.created_at);
         return '<a href="/artikel/'+a.id+'" class="search-result-item"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-family:var(--mono);font-size:.62rem;color:var(--light);"><span class="cat-tag cat-'+a.category+'" style="font-size:.55rem;">'+(CAT[a.category]||a.category)+'</span><span>'+d+'</span></div><h4>'+escHtml(a.title)+'</h4></a>';
       }).join('');
+      resultsEl.classList.add('open');
     } catch(err){ console.error('Search failed:',err); }
   },300);
 }
+document.addEventListener('click',e=>{
+  const wrap=document.querySelector('.header-search');
+  if(wrap && !wrap.contains(e.target)) document.getElementById('search-results').classList.remove('open');
+});
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){ const o=document.getElementById('search-overlay'); if(o.style.display==='flex'){ o.style.display='none'; return; } }
-  if((e.ctrlKey||e.metaKey)&&e.key==='k'){ e.preventDefault(); toggleSearch(); }
+  if(e.key==='Escape') document.getElementById('search-results').classList.remove('open');
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){ e.preventDefault(); document.getElementById('search-input').focus(); }
 });
 </script>
 ${bodyHtml}
@@ -961,6 +969,9 @@ app.get('/om-oss', (req, res) => {
   .team-card .name { font-size: 1.05rem; color: var(--text); font-weight: 600; margin-bottom: 4px; }
   .team-card .role { font-size: .72rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; font-family: var(--mono); }
   .team-card .desc { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+  .flow-figure { margin: 0 0 48px; text-align: center; }
+  .flow-figure img { width: 100%; max-width: 820px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); background: var(--card); }
+  .flow-figure figcaption { margin-top: 10px; color: var(--muted); font-family: var(--mono); font-size: .78rem; letter-spacing: .04em; }
   @media (max-width: 600px) { .team-grid { gap: 14px; } .team-card { width: calc(50% - 7px); padding: 16px; } .team-card img { width: 72px; height: 72px; } }
 </style>
 <div class="about-wrap">
@@ -968,6 +979,13 @@ app.get('/om-oss', (req, res) => {
   <p>Redaktionen.net är en svensk tekniknyhetssajt som drivs med hjälp av AI-teknik. Vårt mål: samla, analysera och presentera de viktigaste tekniknyheterna — från AI-genombrott och hårdvarulanseringar till mjukvara och plattformsnyheter.</p>
   <p>Artiklarna tas fram av en AI-redaktion som bevakar internationella och svenska teknikmedier, skriver artiklar på svenska och faktagranskar innan publicering. En mänsklig redaktör godkänner alla artiklar.</p>
   <p>Vi tror på teknikjournalistik som är tillgänglig, nördig och ärlig. <a href="/kontakt">Hör av dig!</a></p>
+
+  <h2 class="section-title">// Så fungerar redaktionen</h2>
+  <p class="section-intro">Från nyhetskälla till publicerad artikel — AI-agenterna sköter bevakning, skrivande och granskning, och en mänsklig redaktör godkänner innan publicering.</p>
+  <figure class="flow-figure">
+    <img src="/about-flow.png" alt="Illustration av redaktionen.net-flödet: från nyhetskällor via AI-redaktion och granskning till publicerad artikel." loading="lazy">
+    <figcaption>Bevakning → AI-redaktion → Granskning → Publicering</figcaption>
+  </figure>
 
   <h2 class="section-title">// Redaktionen</h2>
   <p class="section-intro">Nio AI-agenter som jobbar dygnet runt med att bevaka, skriva och granska tekniknyheter.</p>

@@ -8,6 +8,7 @@
 <link rel="alternate" type="application/rss+xml" title="Redaktionen.net RSS" href="/rss">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1715654756257886" crossorigin="anonymous"></script>
 <style>
 :root {
   --bg: #0d1117; --bg-elevated: #161b22; --card: #1c2128; --text: #e6edf3; --muted: #8b949e;
@@ -23,11 +24,41 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { overflow-x: hidden; }
 body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; max-width: 100vw; }
-header { background: var(--bg-elevated); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-.header-inner {
+header { position: sticky; top: 0; z-index: 100; background: var(--bg); }
+.header-top { background: var(--bg); border-bottom: 1px solid var(--border); }
+.header-top-inner {
   max-width: 1360px; margin: 0 auto; padding: 20px 40px;
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
 }
+.header-nav-bar { background: var(--bg-elevated); border-bottom: 1px solid var(--border); }
+.header-nav-inner {
+  max-width: 1360px; margin: 0 auto; padding: 10px 40px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+/* ---- SIDEBAR TERMINAL ---- */
+.header-terminal { background: #0a0d12; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px 12px; box-shadow: var(--shadow); min-width: 0; overflow: hidden; }
+.ht-chrome { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,.06); min-width: 0; }
+.ht-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ht-dot-r { background: #ff5f56; }
+.ht-dot-y { background: #ffbd2e; }
+.ht-dot-g { background: #27c93f; }
+.ht-title { font-family: var(--mono); font-size: .68rem; color: var(--light); margin-left: 6px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+.ht-status { margin-left: auto; font-family: var(--mono); font-size: .6rem; color: var(--green); display: flex; align-items: center; gap: 5px; letter-spacing: .1em; flex-shrink: 0; }
+.ht-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); animation: ht-pulse 1.4s ease-in-out infinite; }
+@keyframes ht-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+.ht-body { font-family: var(--mono); font-size: .68rem; line-height: 1.55; color: #cfe3d6; padding-top: 8px; min-width: 0; max-width: 100%; height: calc(10 * 1.55em + 8px); overflow: hidden; position: relative; }
+.ht-line { display: block; width: 100%; white-space: normal; word-break: break-word; overflow: hidden; opacity: 0; transform: translateY(6px); animation: ht-slidein .25s ease-out forwards; }
+.ht-line.fade-out { animation: ht-slideout .3s ease-in forwards; }
+@keyframes ht-slidein { to { opacity: 1; transform: translateY(0); } }
+@keyframes ht-slideout { to { opacity: 0; transform: translateY(-6px); } }
+.ht-ts { color: #5c7a8a; }
+.ht-prompt { color: var(--accent); }
+.ht-agent { color: #ffbd2e; }
+.ht-action { color: #cfe3d6; }
+.ht-ok { color: var(--green); font-weight: 700; }
+.ht-warn { color: #ffbd2e; }
+.ht-info { color: var(--accent); }
+.ht-cursor::after { content: '▌'; color: var(--green); margin-left: 2px; animation: blink 1s step-end infinite; }
 header h1 { font-family: var(--mono); font-size: 2rem; font-weight: 700; letter-spacing: -.5px; line-height: 1.2; }
 header h1 a { color: var(--text); text-decoration: none; }
 header h1 .prompt { color: var(--accent); }
@@ -42,19 +73,26 @@ nav a::after { content: '_'; color: var(--green); margin-left: 1px; opacity: 0; 
 nav a:hover { color: var(--text); background: var(--accent-dim); }
 nav a:hover::after { opacity: 1; animation: blink 1s step-end infinite; }
 nav a.active { color: var(--accent); background: var(--accent-dim); }
-.header-right { text-align: right; display: flex; align-items: center; gap: 10px; }
-.header-right .clock { font-size: .85rem; color: var(--muted); font-family: var(--mono); }
+.header-clock { font-size: .85rem; color: var(--muted); font-family: var(--mono); }
+.header-search { position: relative; }
+.header-search input { width: 260px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 32px 6px 12px; color: var(--text); font-family: var(--sans); font-size: .85rem; outline: none; transition: border-color .15s; }
+.header-search input:focus { border-color: var(--accent); }
+.header-search input::placeholder { color: var(--light); }
+.header-search .search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--light); font-family: var(--mono); font-size: .85rem; pointer-events: none; }
+.header-search-results { position: absolute; top: calc(100% + 6px); right: 0; width: 380px; max-width: 90vw; max-height: 60vh; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); display: none; z-index: 200; }
+.header-search-results.open { display: block; }
 
 /* ---- MAIN LAYOUT: 2/3 + 1/3 ---- */
 .main { max-width: 1360px; margin: 0 auto; padding: 0 40px; }
 .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; margin-top: 32px; }
+.feed-column, .sidebar { min-width: 0; }
 
 .section-header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 .section-header h3 { font-family: var(--mono); font-size: .8rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; }
 .section-header a { font-size: .75rem; color: var(--muted); text-decoration: none; font-weight: 500; padding: 4px 10px; border-radius: 6px; transition: all .2s; }
 .section-header a:hover { color: var(--text); background: var(--accent-dim); }
 .ad-label { text-align: center; font-size: .6rem; color: var(--light); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; margin-top: 32px; margin-bottom: 6px; }
-.ad-banner { background: var(--accent-dim); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 28px; text-align: center; font-size: .9rem; font-weight: 500; color: var(--text); margin-bottom: 24px; }
+.ad-banner { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 28px; text-align: center; font-size: .9rem; font-weight: 500; color: var(--text); margin-bottom: 24px; }
 .ad-banner a { color: var(--accent); font-weight: 600; text-decoration: none; margin-left: 6px; }
 .ad-banner a:hover { text-decoration: underline; }
 
@@ -106,7 +144,8 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 
 /* ---- SIDEBAR ---- */
 .sidebar .section-header { margin-top: 0; }
-.sidebar-block { margin-bottom: 28px; }
+.sidebar-block { margin-bottom: 28px; min-width: 0; }
+.feed-column { min-width: 0; }
 
 .sidebar-item { display: block; text-decoration: none; color: var(--text); padding: 10px 0; border-bottom: 1px solid var(--border); transition: background .15s; }
 .sidebar-item:hover { background: var(--accent-dim); margin: 0 -8px; padding: 10px 8px; border-radius: 6px; }
@@ -148,7 +187,7 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 .team-strip { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); margin: 48px 0 12px; padding: 32px; overflow: hidden; }
 .team-strip h3 { font-family: var(--mono); font-size: .8rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
 .team-strip .team-intro { color: var(--muted); font-size: .88rem; line-height: 1.6; margin-bottom: 28px; max-width: 600px; }
-.team-members { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 16px; min-width: 0; }
+.team-members { display: grid; grid-template-columns: repeat(9, 1fr); gap: 10px; min-width: 0; }
 .team-member { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 16px 10px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); transition: all .25s ease; cursor: pointer; }
 .team-member:hover { background: var(--accent-dim); border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
 .team-member img { width: 100%; aspect-ratio: 3/4; border-radius: 10px; object-fit: cover; object-position: top; margin-bottom: 12px; transition: filter .25s; }
@@ -201,11 +240,14 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 .empty-state p { color: var(--muted); font-size: .9rem; max-width: 400px; margin: 0 auto; }
 
 @media (max-width: 900px) {
-  .header-inner { padding: 12px 16px; flex-direction: column; gap: 8px; align-items: stretch; overflow: hidden; }
+  .header-top-inner { padding: 12px 16px; flex-direction: column; gap: 8px; align-items: stretch; overflow: hidden; }
+  .header-nav-inner { padding: 8px 16px; flex-direction: column; gap: 8px; align-items: stretch; }
   header h1 { font-size: 1.4rem; }
   .header-sub { font-size: .78rem; }
   .header-tagline { font-size: .65rem; }
-  .header-right { display: none; }
+  .header-clock { display: none; }
+  .header-search input { width: 100%; }
+  .header-search-results { width: 100%; right: 0; }
   nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 2px; }
   nav::-webkit-scrollbar { display: none; }
   nav a { font-size: .65rem; padding: 4px 7px; white-space: nowrap; flex-shrink: 0; }
@@ -231,24 +273,30 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 </head>
 <body>
 
-<header><div class="header-inner">
-  <div>
-    <h1><a href="/"><span class="prompt">&gt;</span> redaktionen<span class="cursor">_</span></a></h1>
-    <div class="header-sub">tech-nyheter.</div>
-    <div class="header-tagline">snabbt. nördigt. <span class="green">ai-drivet.</span></div>
-  </div>
-  <nav>
-    <a href="/" class="active nav-home">127.0.0.1</a>
-    <a href="/tech">tech</a>
-    <a href="/hardware">hardware</a>
-    <a href="/ai">ai</a>
-    <a href="/enterprise">enterprise</a>
-  </nav>
-  <div class="header-right">
-    <button id="search-toggle" onclick="toggleSearch()" title="Sök" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.8rem;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--mono);transition:all .15s;">⌕</button>
-    <div class="clock" id="clock"></div>
-  </div>
-</div></header>
+<header>
+  <div class="header-top"><div class="header-top-inner">
+    <div>
+      <h1><a href="/"><span class="prompt">&gt;</span> redaktionen<span class="cursor">_</span></a></h1>
+      <div class="header-sub">tech-nyheter.</div>
+      <div class="header-tagline">snabbt. nördigt. <span class="green">ai-drivet.</span></div>
+    </div>
+    <div class="header-clock" id="clock"></div>
+  </div></div>
+  <div class="header-nav-bar"><div class="header-nav-inner">
+    <nav>
+      <a href="/" class="active nav-home">127.0.0.1</a>
+      <a href="/tech">tech</a>
+      <a href="/hardware">hardware</a>
+      <a href="/ai">ai</a>
+      <a href="/enterprise">enterprise</a>
+    </nav>
+    <div class="header-search">
+      <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" onfocus="if(this.value.trim().length>=2)document.getElementById('search-results').classList.add('open')">
+      <span class="search-icon">⌕</span>
+      <div id="search-results" class="header-search-results"></div>
+    </div>
+  </div></div>
+</header>
 
 
 <div class="main">
@@ -272,6 +320,22 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 
     <!-- RIGHT: Sidebar (1/3) -->
     <div class="sidebar">
+
+      <div class="sidebar-block" id="terminal-block">
+        <div class="section-header">
+          <h3>// Terminal</h3>
+        </div>
+        <div class="header-terminal" id="header-terminal" aria-hidden="true">
+          <div class="ht-chrome">
+            <span class="ht-dot ht-dot-r"></span>
+            <span class="ht-dot ht-dot-y"></span>
+            <span class="ht-dot ht-dot-g"></span>
+            <span class="ht-title">redaktionen@newsroom: ~/live</span>
+            <span class="ht-status"><span class="ht-live-dot"></span> LIVE</span>
+          </div>
+          <div class="ht-body" id="ht-body"></div>
+        </div>
+      </div>
 
       <div class="sidebar-block" id="senaste-block">
         <div class="section-header">
@@ -345,6 +409,112 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
   const d = new Date();
   document.getElementById('clock').textContent = d.toLocaleDateString('sv-SE',{weekday:'short',month:'short',day:'numeric'}) + ' ' + d.toTimeString().slice(0,5);
   setTimeout(updateClock, 30000);
+})();
+
+/* Header live terminal — fake AI newsroom activity stream */
+(function newsroomTerminal(){
+  const body = document.getElementById('ht-body');
+  if (!body) return;
+  const MAX_LINES = 10;
+
+  const agents = [
+    { n: 'sven-googlund',    r: 'researcher',  c: 'tech' },
+    { n: 'linus-karna',      r: 'tech',        c: 'tech' },
+    { n: 'hardy-chipstrom',  r: 'hardware',    c: 'hardware' },
+    { n: 'albert-promtsson', r: 'ai',          c: 'ai' },
+    { n: 'vera-workspace',   r: 'enterprise',  c: 'enterprise' },
+    { n: 'glosa-grammar',    r: 'copyedit',    c: 'tech' },
+    { n: 'klara-faktelius',  r: 'factcheck',   c: 'ai' },
+    { n: 'pixel-peepgren',   r: 'design',      c: 'hardware' },
+    { n: 'fuller-stackman',  r: 'editor',      c: 'enterprise' },
+  ];
+  const sources = [
+    'arstechnica.com', 'theverge.com', 'techcrunch.com', 'hackernews.com',
+    'anandtech.com', 'wired.com', 'phoronix.com', 'github.com/trending',
+    'reuters.com/technology', 'bloomberg.com/tech', 'sweclockers.com',
+    'nyteknik.se', 'idg.se', 'di.se/digital', 'bbc.com/technology',
+  ];
+  const topics = [
+    'GPU benchmarks', 'kernel 6.x release notes', 'AI safety paper', 'chip shortage update',
+    'datacenter expansion', 'open-source licensing dispute', 'quantum computing milestone',
+    'cloud outage postmortem', 'cybersecurity CVE', 'smartphone launch', 'OS update rollout',
+    'AI model release', 'fintech acquisition', 'browser security patch', 'SaaS pricing change',
+  ];
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  function ts() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  const templates = [
+    () => {
+      const a = pick(agents), s = pick(sources);
+      return [`<span class="ht-agent">${a.n}</span>`, `scanning <span class="ht-info">${s}</span> for <span class="ht-info">${pick(topics)}</span>...`];
+    },
+    () => {
+      const a = pick(agents);
+      const n = rnd(3, 18);
+      return [`<span class="ht-agent">${a.n}</span>`, `fetched <span class="ht-info">${n}</span> new items from RSS feeds <span class="ht-ok">[OK]</span>`];
+    },
+    () => {
+      const a = pick(agents.filter(x => ['tech','hardware','ai','enterprise'].includes(x.r))) || agents[1];
+      const t = pick(topics);
+      return [`<span class="ht-agent">${a.n}</span>`, `drafting article: <span class="ht-info">"${t}"</span> (${rnd(280, 1400)} tokens)`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'factcheck');
+      return [`<span class="ht-agent">${a.n}</span>`, `verifying ${rnd(2, 9)} claims against source material... <span class="ht-ok">[PASS]</span>`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'factcheck');
+      return [`<span class="ht-agent">${a.n}</span>`, `flagged <span class="ht-warn">${rnd(1, 3)} unverified claim${rnd(0,1)?'s':''}</span> — requesting rewrite`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'copyedit');
+      return [`<span class="ht-agent">${a.n}</span>`, `copy-editing draft · tone=<span class="ht-info">formal</span> · lang=<span class="ht-info">sv-SE</span> <span class="ht-ok">[OK]</span>`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'design');
+      return [`<span class="ht-agent">${a.n}</span>`, `generating illustration via <span class="ht-info">nano-banana-2</span>... ${rnd(6, 22)}s`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'editor');
+      return [`<span class="ht-agent">${a.n}</span>`, `review queue: <span class="ht-info">${rnd(1, 7)}</span> pending · approving article #${rnd(1000, 9999)} <span class="ht-ok">[APPROVED]</span>`];
+    },
+    () => {
+      const a = agents.find(x => x.r === 'editor');
+      return [`<span class="ht-agent">${a.n}</span>`, `pushed article #${rnd(1000, 9999)} to production · category=<span class="ht-info">${pick(['tech','hardware','ai','enterprise'])}</span>`];
+    },
+    () => [`<span class="ht-info">scheduler</span>`, `next cycle in ${rnd(2, 44)} min · ${rnd(3, 18)} leads in pipeline`],
+    () => [`<span class="ht-info">pipeline</span>`, `embedding ${rnd(5, 30)} new documents into vector store...`],
+    () => [`<span class="ht-info">dedup</span>`, `content-hash match found — <span class="ht-warn">skipping duplicate</span> from ${pick(sources)}`],
+    () => [`<span class="ht-info">brave-search</span>`, `querying <span class="ht-info">"${pick(topics)}"</span> · ${rnd(8, 45)} results · ${rnd(120, 480)}ms`],
+    () => [`<span class="ht-info">openai</span>`, `gpt-4o-mini · ${rnd(800, 4200)} tokens · ${rnd(600, 2800)}ms <span class="ht-ok">[200]</span>`],
+    () => [`<span class="ht-info">cache</span>`, `hit-ratio ${rnd(72, 98)}% · ${rnd(40, 900)} req/min`],
+  ];
+
+  function addLine() {
+    const [who, what] = pick(templates)();
+    const line = document.createElement('span');
+    line.className = 'ht-line';
+    line.innerHTML = `<span class="ht-ts">[${ts()}]</span> <span class="ht-prompt">&gt;</span> ${who} <span class="ht-action">${what}</span>`;
+    body.appendChild(line);
+    Array.from(body.querySelectorAll('.ht-cursor')).forEach(el => el.classList.remove('ht-cursor'));
+    line.classList.add('ht-cursor');
+    while (body.scrollHeight > body.clientHeight && body.firstElementChild && body.firstElementChild !== line) {
+      body.removeChild(body.firstElementChild);
+    }
+  }
+  // seed until the box is nearly full
+  let guard = 0;
+  while (body.scrollHeight <= body.clientHeight && guard++ < 80) {
+    addLine();
+    if (body.scrollHeight > body.clientHeight) break;
+  }
+  setInterval(addLine, 2200);
 })();
 
 /* Team */
@@ -540,68 +710,48 @@ loadArticles();
 loadMostViewed();
 
 /* Search */
-function toggleSearch() {
-  const overlay = document.getElementById('search-overlay');
-  const isOpen = overlay.style.display === 'flex';
-  overlay.style.display = isOpen ? 'none' : 'flex';
-  if (!isOpen) {
-    document.getElementById('search-input').value = '';
-    document.getElementById('search-results').innerHTML = '';
-    setTimeout(() => document.getElementById('search-input').focus(), 50);
-  }
-}
-
 let searchTimeout;
 function handleSearch(e) {
   clearTimeout(searchTimeout);
   const q = e.target.value.trim();
-  if (q.length < 2) { document.getElementById('search-results').innerHTML = ''; return; }
+  const resultsEl = document.getElementById('search-results');
+  if (q.length < 2) { resultsEl.innerHTML = ''; resultsEl.classList.remove('open'); return; }
   searchTimeout = setTimeout(async () => {
     try {
       const r = await fetch('/api/search?q=' + encodeURIComponent(q));
       const articles = await r.json();
       if (!articles.length) {
-        document.getElementById('search-results').innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">Inga resultat</div>';
+        resultsEl.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">Inga resultat</div>';
+        resultsEl.classList.add('open');
         return;
       }
-      document.getElementById('search-results').innerHTML = articles.map(a => {
+      resultsEl.innerHTML = articles.map(a => {
         const ts = a.published_at || a.created_at;
         const date = formatArticleDate(ts);
         return `<a href="/artikel/${a.id}" class="search-result-item">
           <div class="card-topline" style="margin-bottom:4px;"><span class="cat-tag cat-${a.category}" style="font-size:.55rem;">${CAT[a.category] || a.category}</span><span>${date}</span></div>
           <h4 style="margin:0;">${esc(a.title)}</h4>
-          <div style="color:var(--light);font-size:.7rem;margin-top:4px;">${esc(a.byline || 'Redaktionen')}</div>
         </a>`;
       }).join('');
+      resultsEl.classList.add('open');
     } catch (err) { console.error('Search failed:', err); }
   }, 300);
 }
 
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.header-search');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('search-results').classList.remove('open');
+});
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    const overlay = document.getElementById('search-overlay');
-    if (overlay.style.display === 'flex') { overlay.style.display = 'none'; return; }
-  }
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); toggleSearch(); }
+  if (e.key === 'Escape') document.getElementById('search-results').classList.remove('open');
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('search-input').focus(); }
 });
 </script>
-
-<!-- Search overlay -->
-<div id="search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;justify-content:center;align-items:flex-start;padding-top:min(20vh,160px);backdrop-filter:blur(4px);" onclick="if(event.target===this)toggleSearch()">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);width:90%;max-width:580px;box-shadow:var(--shadow-lg);overflow:hidden;">
-    <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:10px;">
-      <span style="color:var(--accent);font-family:var(--mono);font-weight:700;font-size:.8rem;">⌕</span>
-      <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" style="flex:1;background:none;border:none;outline:none;font-size:1rem;color:var(--text);font-family:var(--sans);">
-      <kbd style="font-family:var(--mono);font-size:.6rem;color:var(--light);background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--border);">ESC</kbd>
-    </div>
-    <div id="search-results" style="max-height:60vh;overflow-y:auto;"></div>
-  </div>
-</div>
 <style>
   .search-result-item { display:block;text-decoration:none;color:var(--text);padding:12px 18px;border-bottom:1px solid var(--border);transition:background .1s; }
+  .search-result-item:last-child { border-bottom: none; }
   .search-result-item:hover { background:var(--accent-dim); }
-  .search-result-item h4 { font-size:.92rem;font-weight:600;margin:4px 0 3px;line-height:1.35; }
-  #search-toggle:hover { color:var(--text);background:var(--accent-dim);border-color:var(--accent); }
+  .search-result-item h4 { font-size:.92rem;font-weight:600;margin:0;line-height:1.35; }
 </style>
 </body>
 </html>
