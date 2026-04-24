@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Redaktionen.net — AI-driven teknikredaktion</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨</text></svg>">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="alternate" type="application/rss+xml" title="Redaktionen.net RSS" href="/rss">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -95,17 +95,19 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 .ad-banner { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 28px; text-align: center; font-size: .9rem; font-weight: 500; color: var(--text); margin-bottom: 24px; }
 .ad-banner a { color: var(--accent); font-weight: 600; text-decoration: none; margin-left: 6px; }
 .ad-banner a:hover { text-decoration: underline; }
+a.ad-banner.ad-banner-img { display: block; padding: 0; background: transparent; overflow: hidden; line-height: 0; }
+a.ad-banner.ad-banner-img img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 
-/* ---- FEED: articles with images (large cards) ---- */
+/* ---- FEED: articles with images (flat inside feed-column wrapper) ---- */
 .feed-card {
-  display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); overflow: hidden; text-decoration: none; color: var(--text);
-  box-shadow: var(--shadow); transition: box-shadow .25s, transform .25s; margin-bottom: 20px;
+  display: flex; flex-direction: column; background: transparent; border: none;
+  border-bottom: 1px solid var(--border); border-radius: 0; overflow: hidden; text-decoration: none; color: var(--text);
+  box-shadow: none; transition: background .2s; margin-bottom: 0;
 }
-.feed-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
-.feed-card img { width: 100%; height: 240px; object-fit: cover; }
+.feed-card:hover { transform: none; box-shadow: none; background: var(--accent-dim); }
+.feed-card img { width: 100%; height: 240px; object-fit: cover; border-radius: var(--radius); margin-top: 4px; }
 
-.feed-card .body { padding: 20px; }
+.feed-card .body { padding: 16px 6px 18px; }
 .cat-tag {
   display: inline-block; font-family: var(--mono); font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
   padding: 2px 8px; border-radius: 4px; line-height: 1; white-space: nowrap;
@@ -117,14 +119,15 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 .card-topline { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--light); font-size: .72rem; font-family: var(--mono); }
 .feed-card h2 { font-size: 1.2rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; letter-spacing: -.3px; }
 .feed-card .summary { color: var(--muted); font-size: .88rem; line-height: 1.55; margin-bottom: 10px; }
-.feed-card .byline { color: var(--light); font-size: .72rem; padding-top: 10px; border-top: 1px solid var(--border); }
+.feed-card .byline { color: var(--light); font-size: .72rem; padding-top: 0; border-top: none; margin-top: 2px; }
 
-/* ---- No-image cards: compact ---- */
-.feed-card.no-img .body { padding: 14px 18px; }
+/* ---- No-image cards: compact (flat inside feed-column wrapper) ---- */
+.feed-card.no-img { background: transparent; border: none; border-bottom: 1px solid var(--border); border-radius: 0; box-shadow: none; margin-bottom: 0; padding-bottom: 0; }
+.feed-card.no-img:hover { transform: none; box-shadow: none; border-color: transparent; border-bottom-color: var(--border); background: var(--accent-dim); }
+.feed-card.no-img .body { padding: 14px 6px; }
 .feed-card.no-img h2 { font-size: 1rem; line-height: 1.3; margin-bottom: 4px; }
 .feed-card.no-img .summary { font-size: .82rem; line-height: 1.45; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.feed-card.no-img .byline { padding-top: 6px; }
-.feed-card.no-img { margin-bottom: 14px; }
+.feed-card.no-img .byline { padding-top: 0; border-top: none; margin-top: 2px; }
 
 /* ---- FEED: text-only articles (compact) ---- */
 .feed-compact {
@@ -144,8 +147,10 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 
 /* ---- SIDEBAR ---- */
 .sidebar .section-header { margin-top: 0; }
-.sidebar-block { margin-bottom: 28px; min-width: 0; }
-.feed-column { min-width: 0; }
+.sidebar-block { margin-bottom: 20px; min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.feed-column { min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; align-self: start; }
+.feed-column .section-header { margin-bottom: 14px; }
+.feed-column > #feed > *:last-child { margin-bottom: 0 !important; border-bottom: none !important; }
 
 .sidebar-item { display: block; text-decoration: none; color: var(--text); padding: 10px 0; border-bottom: 1px solid var(--border); transition: background .15s; }
 .sidebar-item:hover { background: var(--accent-dim); margin: 0 -8px; padding: 10px 8px; border-radius: 6px; }
@@ -167,6 +172,20 @@ nav a.active { color: var(--accent); background: var(--accent-dim); }
 .most-clicked-item .rank { font-family: var(--mono); font-size: 1.1rem; font-weight: 700; color: var(--accent); min-width: 22px; line-height: 1.3; }
 .most-clicked-item h4 { font-size: .82rem; font-weight: 600; line-height: 1.35; }
 .most-clicked-item .views { font-size: .62rem; color: var(--light); font-family: var(--mono); }
+
+/* ---- NEWSLETTER ---- */
+.newsletter-block .section-header { margin-bottom: 6px; }
+.newsletter-pitch { font-size: .78rem; line-height: 1.45; color: var(--muted); margin: 0 0 12px; }
+.newsletter-form { display: flex; flex-direction: column; gap: 8px; }
+.newsletter-form input[type=email] { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 9px 10px; border-radius: 6px; font-family: var(--mono); font-size: .78rem; }
+.newsletter-form input[type=email]:focus { outline: none; border-color: var(--accent); }
+.newsletter-form button { background: var(--accent); color: var(--bg); border: none; padding: 9px 12px; border-radius: 6px; font-family: var(--mono); font-size: .75rem; font-weight: 700; letter-spacing: .04em; cursor: pointer; transition: opacity .15s; }
+.newsletter-form button:hover { opacity: .85; }
+.newsletter-form button:disabled { opacity: .5; cursor: wait; }
+.newsletter-status { font-size: .72rem; margin-top: 8px; font-family: var(--mono); min-height: 1em; }
+.newsletter-status.ok { color: var(--green, #3fb950); }
+.newsletter-status.err { color: #f85149; }
+.newsletter-legal { font-size: .65rem; color: var(--light); margin: 10px 0 0; font-family: var(--mono); }
 
 /* ---- FEATURED TOP 2 ---- */
 .featured-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 4px; }
@@ -212,12 +231,17 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 .footer-inner { border-top: 1px solid var(--border); padding-top: 32px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .footer-brand { font-family: var(--mono); font-size: 1rem; color: var(--text); font-weight: 700; }
 .footer-brand .prompt { color: var(--accent); }
-.footer-nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: center; }
-.footer-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 4px 10px; border-radius: 6px; transition: all .2s; }
+.footer-nav { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.footer-nav a { color: var(--muted); text-decoration: none; font-weight: 500; padding: 4px 10px; border-radius: 6px; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+.footer-nav a svg { width: 14px; height: 14px; flex-shrink: 0; }
 .footer-nav a::after { content: '_'; color: var(--green); margin-left: 1px; opacity: 0; }
 .footer-nav a:hover { background: var(--accent-dim); color: var(--text); }
 .footer-nav a:hover::after { opacity: 1; animation: blink 1s step-end infinite; }
-.footer-nav .sep { color: var(--border); font-size: .7rem; user-select: none; }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.nav-social { display: flex; align-items: center; gap: 10px; padding-right: 12px; border-right: 1px solid var(--border); }
+.nav-social a { display: inline-flex; align-items: center; justify-content: center; color: var(--muted); transition: color .2s, transform .2s; }
+.nav-social a:hover { color: var(--accent); transform: translateY(-1px); }
+.nav-social svg { width: 15px; height: 15px; }
 .footer-tagline { color: var(--light); font-size: .75rem; }
 .footer-tagline a { color: var(--accent); }
 .mob-br { display: none; }
@@ -290,10 +314,18 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
       <a href="/ai">ai</a>
       <a href="/enterprise">enterprise</a>
     </nav>
-    <div class="header-search">
-      <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" onfocus="if(this.value.trim().length>=2)document.getElementById('search-results').classList.add('open')">
-      <span class="search-icon">⌕</span>
-      <div id="search-results" class="header-search-results"></div>
+    <div class="nav-right">
+      <div class="nav-social">
+        <a href="https://mastodon.social/@redaktionen" rel="me noopener" target="_blank" aria-label="Mastodon" title="Mastodon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.58 6.186c-.316-2.372-2.367-4.243-4.799-4.608C16.37 1.517 14.836 1.4 12.002 1.4h-.022c-2.835 0-3.443.117-3.853.178-2.368.364-4.526 2.047-5.049 4.447C2.829 7.19 2.802 8.47 2.852 9.78c.071 1.879.084 3.755.253 5.625.117 1.243.321 2.476.61 3.69.54 2.247 2.74 4.117 4.893 4.884 2.305.801 4.784.934 7.16.384.262-.063.52-.136.776-.216.579-.185 1.258-.392 1.757-.754a.06.06 0 0 0 .024-.048v-1.811a.056.056 0 0 0-.069-.056c-1.503.363-3.042.546-4.588.544-2.66 0-3.376-1.274-3.581-1.805a5.584 5.584 0 0 1-.312-1.431.055.055 0 0 1 .069-.056 17.58 17.58 0 0 0 4.515.544c.364 0 .727 0 1.091-.01 1.531-.043 3.144-.121 4.651-.417.038-.008.075-.015.107-.025 2.378-.457 4.641-1.89 4.871-5.513.009-.143.03-1.496.03-1.644.001-.504.162-3.579-.024-5.465zm-3.423 9.07h-2.35V9.536c0-1.2-.504-1.814-1.527-1.814-1.125 0-1.689.729-1.689 2.17v3.143h-2.334v-3.143c0-1.441-.565-2.17-1.69-2.17-1.017 0-1.526.613-1.527 1.814v5.72H4.69V9.364c0-1.2.306-2.155.917-2.862.63-.706 1.457-1.068 2.485-1.068 1.189 0 2.087.458 2.686 1.372l.586.981.586-.981c.6-.914 1.498-1.372 2.685-1.372 1.027 0 1.855.362 2.486 1.068.61.707.916 1.661.916 2.862v5.892z"/></svg></a>
+        <a href="https://bsky.app/profile/redaktionen.bsky.social" rel="noopener" target="_blank" aria-label="Bluesky" title="Bluesky"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.203 3.462c2.726 2.046 5.66 6.194 6.737 8.42 1.076-2.226 4.01-6.374 6.736-8.42 1.967-1.476 5.156-2.618 5.156 1.02 0 .726-.417 6.1-.661 6.973-.85 3.032-3.942 3.805-6.693 3.337 4.81.82 6.035 3.532 3.393 6.244-5.022 5.151-7.221-1.29-7.784-2.942-.104-.303-.152-.445-.152-.324 0-.12-.049.021-.152.324-.564 1.652-2.762 8.093-7.785 2.942-2.641-2.712-1.416-5.425 3.394-6.244-2.75.468-5.843-.305-6.693-3.337-.244-.872-.66-6.247-.66-6.972 0-3.64 3.188-2.497 5.155-1.02z"/></svg></a>
+        <a href="https://twitter.com/Redaktionen_net" rel="noopener" target="_blank" aria-label="X" title="X (Twitter)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+        <a href="https://discord.gg/d5TfzWaMGp" rel="noopener" target="_blank" aria-label="Discord" title="Discord"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3.2a.074.074 0 0 0-.079.037c-.34.607-.719 1.398-.984 2.02a18.27 18.27 0 0 0-5.487 0 12.6 12.6 0 0 0-.997-2.02.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 5.164 4.37a.07.07 0 0 0-.032.027C1.533 9.046.57 13.58 1.043 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.105 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .077-.01c3.927 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.009c.12.099.246.198.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.04.106c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></a>
+      </div>
+      <div class="header-search">
+        <input id="search-input" type="text" placeholder="Sök artiklar..." oninput="handleSearch(event)" onfocus="if(this.value.trim().length>=2)document.getElementById('search-results').classList.add('open')">
+        <span class="search-icon">⌕</span>
+        <div id="search-results" class="header-search-results"></div>
+      </div>
     </div>
   </div></div>
 </header>
@@ -303,7 +335,7 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 
   <!-- Ad banner -->
   <div class="ad-label">Annons</div>
-  <div class="ad-banner">Vill du synas här? 🤖 <a href="/kontakt">Kontakta oss</a></div>
+  <div id="ad-banner-slot" class="ad-banner">Vill du synas här? 🤖 <a href="/kontakt">Kontakta oss</a></div>
 
   <!-- 2/3 + 1/3 layout -->
   <div class="content-layout">
@@ -363,6 +395,28 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
       <div class="ad-label">Annons</div>
       <div class="ad-slot-sidebar"></div>
 
+      <div class="sidebar-block">
+        <div class="section-header">
+          <h3>// Mest kommenterade</h3>
+        </div>
+        <div id="sidebar-commented">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="sidebar-block newsletter-block">
+        <div class="section-header">
+          <h3>// Dagens 5</h3>
+        </div>
+        <p class="newsletter-pitch">En morgondigest kl. 08:00 CET med nattens bästa artiklar. Kurerat, inte sponsrat.</p>
+        <form id="newsletter-form" class="newsletter-form" onsubmit="subscribeNewsletter(event)">
+          <input type="email" id="newsletter-email" name="email" placeholder="din@epost.se" required autocomplete="email">
+          <button type="submit" id="newsletter-submit">Prenumerera →</button>
+        </form>
+        <div id="newsletter-status" class="newsletter-status" aria-live="polite"></div>
+        <p class="newsletter-legal">Ingen spam. Avsluta när du vill via länk i varje utskick.</p>
+      </div>
+
       <div class="sidebar-block" id="chronicle-block" style="display:none;">
         <div class="section-header">
           <h3>// Veckokrönika</h3>
@@ -388,11 +442,12 @@ footer { max-width: 1360px; margin: 0 auto; padding: 0 40px 40px; color: var(--l
 <footer><div class="footer-inner">
   <div class="footer-brand"><span class="prompt">&gt;</span> redaktionen</div>
   <nav class="footer-nav">
-    <a href="/kontakt">Kontakt</a><span class="sep">·</span>
-    <a href="/om-oss">Om oss</a><span class="sep">·</span>
-    <a href="/rss">RSS</a>
+    <a href="/kontakt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>Kontakt</a>
+    <a href="/om-oss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Om oss</a>
+    <a href="/metodik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg>Metodik</a>
+    <a href="/rss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>RSS</a>
   </nav>
-<div class="footer-tagline">AI-driven teknikredaktion &middot; &copy; 2026 redaktionen.net <span class="mob-hide">&middot;</span> <br class="mob-br"><a href="/om-oss">Läs mer</a></div>
+<div class="footer-tagline">AI-driven teknikredaktion &middot; &copy; 2026 redaktionen.net</div>
 <div class="team-modal-overlay" id="team-modal" onclick="if(event.target===this)closeModal()">
   <div class="team-modal">
     <button class="close-btn" onclick="closeModal()">&times;</button>
@@ -700,6 +755,32 @@ async function loadMostViewed() {
   }
 }
 
+/* Load most commented for sidebar */
+async function loadMostCommented() {
+  try {
+    const r = await fetch('/api/articles/most-commented?limit=5&days=30');
+    if (!r.ok) return;
+    const articles = await r.json();
+    const el = document.getElementById('sidebar-commented');
+    if (!el) return;
+    if (!articles.length) {
+      el.innerHTML = '<p style="color:var(--light);font-size:.8rem;padding:8px 0;">Inga kommentarer ännu</p>';
+      return;
+    }
+    el.innerHTML = articles.map((a, i) => {
+      return `<a href="/artikel/${a.id}#kommentarer" class="most-clicked-item">
+        <span class="rank">${i + 1}</span>
+        <div>
+          <h4>${esc(a.title)}</h4>
+          <span class="views">${a.comment_count} kommentar${a.comment_count === 1 ? '' : 'er'}</span>
+        </div>
+      </a>`;
+    }).join('');
+  } catch (e) {
+    console.error('Failed to load most commented:', e);
+  }
+}
+
 function esc(s) {
   const d = document.createElement('div');
   d.textContent = s;
@@ -708,6 +789,63 @@ function esc(s) {
 
 loadArticles();
 loadMostViewed();
+loadMostCommented();
+loadAdBanner();
+
+async function loadAdBanner() {
+  try {
+    const r = await fetch('/api/ad-banner');
+    const cfg = await r.json();
+    const slot = document.getElementById('ad-banner-slot');
+    if (!slot) return;
+    if (cfg.mode === 'custom' && cfg.image) {
+      const url = cfg.url || '/kontakt';
+      const isExt = /^https?:/.test(url);
+      const alt = (cfg.alt || 'Annons').replace(/"/g, '&quot;');
+      const picture = cfg.image_mobile
+        ? `<picture><source media="(max-width: 640px)" srcset="${cfg.image_mobile}"><img src="${cfg.image}" alt="${alt}" loading="lazy"></picture>`
+        : `<img src="${cfg.image}" alt="${alt}" loading="lazy">`;
+      slot.outerHTML = `<a id="ad-banner-slot" href="${url}" class="ad-banner ad-banner-img"${isExt ? ' target="_blank" rel="sponsored noopener"' : ''}>${picture}</a>`;
+    } else if (cfg.url && cfg.url !== '/kontakt') {
+      slot.innerHTML = `Vill du synas här? 🤖 <a href="${cfg.url}">Kontakta oss</a>`;
+    }
+  } catch { /* keep default */ }
+}
+
+/* Newsletter signup */
+async function subscribeNewsletter(e) {
+  e.preventDefault();
+  const form = e.target;
+  const input = document.getElementById('newsletter-email');
+  const btn = document.getElementById('newsletter-submit');
+  const status = document.getElementById('newsletter-status');
+  const email = input.value.trim();
+  if (!email) return;
+  btn.disabled = true;
+  status.textContent = '';
+  status.className = 'newsletter-status';
+  try {
+    const r = await fetch('/api/newsletter/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const j = await r.json();
+    if (r.ok && j.ok) {
+      status.textContent = j.message || 'Tack! Kolla inkorgen.';
+      status.className = 'newsletter-status ok';
+      input.value = '';
+    } else {
+      status.textContent = j.error || 'Något gick fel.';
+      status.className = 'newsletter-status err';
+    }
+  } catch (err) {
+    status.textContent = 'Nätverksfel. Försök igen.';
+    status.className = 'newsletter-status err';
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 /* Search */
 let searchTimeout;

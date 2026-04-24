@@ -15,5 +15,25 @@
   "brave_search_key": "",
   "admin_password": "change-me",
   "scan_interval": 28800,
-  "articles_per_cycle": 5
+  "articles_per_cycle": 5,
+  "site_url": "https://redaktionen.net",
+  "mastodon_instance": "",
+  "mastodon_token": "",
+  "bluesky_handle": "",
+  "bluesky_app_password": "",
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "x_api_key": "",
+  "x_api_secret": "",
+  "x_access_token": "",
+  "x_access_token_secret": "",
+  "resend_api_key": "",
+  "newsletter_from": "redaktionen.net <noreply@redaktionen.net>",
+  "public_url": "https://redaktionen.net",
+  "discord_webhooks": {
+    "tech": "",
+    "hardware": "",
+    "ai": "",
+    "enterprise": ""
+  }
 }

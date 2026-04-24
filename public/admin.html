@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Redaktionen — Admin</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⌨</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -172,10 +172,13 @@
   <div class="tabs">
     <button class="tab active" data-tab="queue">Kö</button>
     <button class="tab" data-tab="all">Alla artiklar</button>
+    <button class="tab" data-tab="attention">Att åtgärda <span id="att-badge" style="display:none;background:var(--orange);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;"></span></button>
     <button class="tab" data-tab="sources">Källor</button>
     <button class="tab" data-tab="logs">Logg</button>
     <button class="tab" data-tab="messages">Meddelanden <span id="msg-badge" style="display:none;background:var(--red);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;"></span></button>
+    <button class="tab" data-tab="comments">Kommentarer <span id="com-badge" style="display:none;background:var(--red);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:8px;margin-left:4px;"></span></button>
     <button class="tab" data-tab="users">Användare</button>
+    <button class="tab" data-tab="ads">Annons</button>
   </div>
 
   <!-- Queue tab -->
@@ -203,6 +206,18 @@
     <div id="all-content"></div>
   </div>
 
+  <!-- Needs-attention tab -->
+  <div class="tab-panel" id="panel-attention" style="display:none">
+    <div class="toolbar">
+      <h2>Artiklar att åtgärda</h2>
+      <div class="actions">
+        <button class="btn" onclick="loadAttention()">Uppdatera</button>
+      </div>
+    </div>
+    <p style="color:var(--light);font-size:.85rem;margin:-4px 0 16px">Senaste 7 dagarna: artiklar utan bild, misslyckade broadcasts, eller faktakoll-varningar.</p>
+    <div id="attention-content">Laddar…</div>
+  </div>
+
   <!-- Sources tab -->
   <div class="tab-panel" id="panel-sources" style="display:none">
     <div class="toolbar">
@@ -224,6 +239,18 @@
     <div id="messages-content"></div>
   </div>
 
+  <!-- Comments tab -->
+  <div class="tab-panel" id="panel-comments" style="display:none">
+    <div class="toolbar">
+      <h2>Kommentarsmoderering</h2>
+      <div class="actions">
+        <button class="btn" onclick="loadComments('pending')" id="cm-tab-pending" style="background:var(--blue-bg);color:var(--blue)">Väntande</button>
+        <button class="btn" onclick="loadComments('all')" id="cm-tab-all">Alla</button>
+      </div>
+    </div>
+    <div id="comments-content"></div>
+  </div>
+
   <!-- Users tab -->
   <div class="tab-panel" id="panel-users" style="display:none">
     <div class="toolbar">
@@ -231,6 +258,68 @@
       <button class="btn btn-blue" onclick="showAddUser()">+ Lägg till användare</button>
     </div>
     <div id="users-content"></div>
+  </div>
+
+  <!-- Ads tab -->
+  <div class="tab-panel" id="panel-ads" style="display:none">
+    <div class="toolbar">
+      <h2>Annonsbanner (topp)</h2>
+    </div>
+    <div class="card" style="max-width:780px">
+      <p style="color:var(--muted);margin-bottom:18px">
+        Styr den översta bannern på startsidan och kategorisidorna. Välj mellan standardtext eller en egen PNG-bild.
+      </p>
+
+      <label style="display:block;margin-bottom:10px;font-weight:600">Läge</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px;cursor:pointer">
+        <input type="radio" name="ad-mode" value="default" id="ad-mode-default" checked>
+        <span>Standardtext: <em style="color:var(--muted)">Vill du synas här? 🤖 Kontakta oss</em></span>
+      </label>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:18px;cursor:pointer">
+        <input type="radio" name="ad-mode" value="custom" id="ad-mode-custom">
+        <span>Egen PNG-bild</span>
+      </label>
+
+      <label style="display:block;margin-bottom:6px;font-weight:600">Klick-URL</label>
+      <input type="text" id="ad-url" placeholder="/kontakt eller https://annonsor.se/landing" style="width:100%;margin-bottom:18px">
+
+      <div id="ad-custom-fields" style="display:none;border-top:1px solid var(--border);padding-top:18px">
+        <div style="background:var(--blue-bg);border-left:3px solid var(--blue);padding:10px 14px;margin-bottom:14px;border-radius:4px;font-size:.85rem;line-height:1.45">
+          <strong>Rekommenderade storlekar:</strong><br>
+          Desktop/tablet: <strong>970 × 90 px</strong> (leaderboard) eller 728 × 90 px.<br>
+          Mobil: <strong>320 × 100 px</strong> (large mobile banner) eller 300 × 100 / 320 × 50 px.<br>
+          <span style="color:var(--muted)">2× upplösning (t.ex. 1940 × 180 / 640 × 200 px) rekommenderas för Retina. Max 4 MB per fil.</span>
+        </div>
+
+        <h3 style="font-size:.9rem;margin:18px 0 10px;font-family:var(--mono);color:var(--muted);letter-spacing:.04em">// DESKTOP / TABLET (&gt; 640 px)</h3>
+        <label style="display:block;margin-bottom:6px;font-weight:600">PNG-fil (desktop)</label>
+        <input type="file" id="ad-file" accept="image/png" style="margin-bottom:14px">
+        <div id="ad-preview-wrap" style="display:none;margin-bottom:18px">
+          <div style="font-size:.7rem;color:var(--light);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Förhandsvisning (desktop)</div>
+          <img id="ad-preview" style="max-width:100%;border:1px solid var(--border);border-radius:6px;display:block">
+          <div id="ad-dims" style="font-family:var(--mono);font-size:.75rem;color:var(--muted);margin-top:6px"></div>
+          <button class="btn" onclick="clearAdImage()" style="margin-top:8px">Ta bort desktop-bild</button>
+        </div>
+
+        <h3 style="font-size:.9rem;margin:18px 0 10px;font-family:var(--mono);color:var(--muted);letter-spacing:.04em">// MOBIL (≤ 640 px)</h3>
+        <label style="display:block;margin-bottom:6px;font-weight:600">PNG-fil (mobil) <span style="color:var(--muted);font-weight:400;font-size:.8rem">– valfri, annars används desktop-bilden</span></label>
+        <input type="file" id="ad-file-mobile" accept="image/png" style="margin-bottom:14px">
+        <div id="ad-preview-mobile-wrap" style="display:none;margin-bottom:14px">
+          <div style="font-size:.7rem;color:var(--light);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Förhandsvisning (mobil)</div>
+          <img id="ad-preview-mobile" style="max-width:320px;border:1px solid var(--border);border-radius:6px;display:block">
+          <div id="ad-dims-mobile" style="font-family:var(--mono);font-size:.75rem;color:var(--muted);margin-top:6px"></div>
+          <button class="btn" onclick="clearAdImageMobile()" style="margin-top:8px">Ta bort mobil-bild</button>
+        </div>
+
+        <label style="display:block;margin-bottom:6px;font-weight:600;margin-top:6px">Alt-text (tillgänglighet)</label>
+        <input type="text" id="ad-alt" placeholder="T.ex. 'Cloudways – hosting för utvecklare'" style="width:100%;margin-bottom:14px">
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button class="btn btn-blue" onclick="saveAdBanner()">Spara</button>
+        <span id="ad-status" style="align-self:center;font-family:var(--mono);font-size:.8rem"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -392,6 +481,9 @@ document.querySelectorAll('.tab').forEach(t => {
     document.querySelectorAll('.tab-panel').forEach(x => x.style.display = 'none');
     t.classList.add('active');
     document.getElementById('panel-' + t.dataset.tab).style.display = 'block';
+    if (t.dataset.tab === 'comments') loadComments('pending');
+    if (t.dataset.tab === 'ads') loadAdBannerAdmin();
+    if (t.dataset.tab === 'attention') loadAttention();
   });
 });
 
@@ -414,6 +506,11 @@ async function refresh() {
     try { renderLogs(logs, 0); } catch(e) { console.error('renderLogs', e); }
     try { renderMessages(msgData); } catch(e) { console.error('renderMessages', e); }
     try { renderUsers(users); } catch(e) { console.error('renderUsers', e); }
+    // Fire-and-forget attention count for badge
+    api('GET', '/api/admin/needs-attention?days=7').then(d => {
+      const badge = document.getElementById('att-badge');
+      if (d.count > 0) { badge.textContent = d.count; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
+    }).catch(() => {});
   } catch (e) {
     console.error('Refresh error:', e);
   }
@@ -425,6 +522,8 @@ function renderStats(s) {
   document.getElementById('stat-approved').textContent = m.approved || 0;
   document.getElementById('stat-draft').textContent = m.draft || 0;
   document.getElementById('stat-rejected').textContent = m.rejected || 0;
+  const cb = document.getElementById('com-badge');
+  if (cb) { if (s.pendingComments > 0) { cb.textContent = s.pendingComments; cb.style.display = 'inline'; } else { cb.style.display = 'none'; } }
 }
 
 function badgeFor(status) { return `<span class="badge badge-${status}">${status}</span>`; }
@@ -454,7 +553,7 @@ function renderQueue(items) {
         <a href="/artikel/${a.id}/preview" target="_blank" class="btn btn-orange btn-sm">Förhandsvisning</a>
         <button class="btn btn-green btn-sm" onclick="approve(${a.id})">Publicera</button>
         <button class="btn btn-muted btn-sm" onclick="openEditor(${a.id})">Redigera</button>
-        ${a.status === 'draft' || (a.body || '').includes('[FAKTAKOLL:') ? `<button class="btn btn-blue btn-sm" onclick="rewriteArticle(${a.id})" id="rewrite-btn-${a.id}">Skriv om</button>` : ''}
+        ${a.status === 'draft' || (a.body || '').includes('FAKTAKOLL:') ? `<button class="btn btn-blue btn-sm" onclick="rewriteArticle(${a.id})" id="rewrite-btn-${a.id}">Skriv om</button>` : ''}
         <button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="reject(${a.id})">Avvisa</button>
       </td>
     </tr>`).join('')}</tbody></table>`;
@@ -743,6 +842,93 @@ function renderMessages(data) {
 async function markMsgRead(id) { await api('POST', `/api/admin/messages/${id}/read`); refresh(); }
 async function deleteMsg(id) { if (!confirm('Ta bort detta meddelande?')) return; await api('DELETE', `/api/admin/messages/${id}`); refresh(); }
 
+// ---- Needs attention ----
+async function loadAttention() {
+  const wrap = document.getElementById('attention-content');
+  wrap.innerHTML = 'Laddar…';
+  try {
+    const data = await api('GET', '/api/admin/needs-attention?days=7');
+    const badge = document.getElementById('att-badge');
+    if (data.count > 0) { badge.textContent = data.count; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
+    if (!data.items.length) { wrap.innerHTML = '<p style="color:var(--light)">Inga öppna problem 🎉</p>'; return; }
+
+    const tagStyle = {
+      no_image:          'background:var(--orange-bg);color:var(--orange)',
+      broadcast_failed:  'background:var(--red-bg);color:var(--red)',
+      fact_check_warning:'background:var(--purple-bg);color:var(--purple)',
+    };
+    const tagLabel = {
+      no_image: 'Saknar bild',
+      broadcast_failed: 'Broadcast misslyckades',
+      fact_check_warning: 'Faktakoll-varning',
+    };
+
+    wrap.innerHTML = data.items.map(it => {
+      const when = it.published_at ? new Date(it.published_at.replace(' ','T')+'Z').toLocaleString('sv-SE') : '';
+      const tags = it.issues.map(iss => `<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:.7rem;font-family:var(--mono);${tagStyle[iss.tag]||''};margin-right:6px" title="${(iss.detail||'').replace(/"/g,'&quot;')}">${tagLabel[iss.tag]||iss.tag}</span>`).join('');
+      const thumb = it.image_url ? `<img src="${it.image_url}" style="width:60px;height:40px;object-fit:cover;border-radius:4px">` : `<div style="width:60px;height:40px;background:#222;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--light);font-size:.7rem">—</div>`;
+      return `<div style="display:flex;gap:12px;align-items:center;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+        ${thumb}
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">${tags}</div>
+          <a href="/artikel/${it.id}" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:none">${it.title}</a>
+          <div style="color:var(--light);font-size:.75rem;margin-top:2px">#${it.id} · ${it.category} · ${when}</div>
+        </div>
+        <button class="btn" onclick="openEditor(${it.id})">Öppna</button>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    wrap.innerHTML = `<p style="color:var(--red)">Fel: ${e.message}</p>`;
+  }
+}
+
+// ---- Comments moderation ----
+let cmCurrentView = 'pending';
+async function loadComments(view) {
+  cmCurrentView = view;
+  document.getElementById('cm-tab-pending').style = view === 'pending' ? 'background:var(--blue-bg);color:var(--blue)' : '';
+  document.getElementById('cm-tab-all').style = view === 'all' ? 'background:var(--blue-bg);color:var(--blue)' : '';
+  const endpoint = view === 'pending' ? '/api/admin/comments/pending' : '/api/admin/comments?limit=100';
+  try {
+    const items = await api('GET', endpoint);
+    renderCommentsPanel(items, view);
+  } catch (e) {
+    document.getElementById('comments-content').innerHTML = '<p class="empty">Kunde inte hämta kommentarer.</p>';
+  }
+}
+function renderCommentsPanel(items, view) {
+  const el = document.getElementById('comments-content');
+  if (!items.length) { el.innerHTML = `<p class="empty">Inga ${view === 'pending' ? 'väntande' : ''} kommentarer.</p>`; return; }
+  el.innerHTML = items.map(c => {
+    const statusBadge = c.status === 'approved' ? '<span class="badge badge-approved">Publicerad</span>'
+      : c.status === 'pending' ? '<span class="badge" style="background:#3a2f00;color:#d29922">Väntande</span>'
+      : c.status === 'spam' ? '<span class="badge" style="background:var(--red-bg);color:var(--red)">Spam</span>'
+      : `<span class="badge">${esc(c.status)}</span>`;
+    const verdict = c.ai_verdict ? `<span class="badge" style="background:var(--blue-bg);color:var(--blue)">AI: ${esc(c.ai_verdict)}</span>` : '';
+    const reason = c.ai_reason ? `<span style="color:var(--muted);font-size:.75rem">(${esc(c.ai_reason)})</span>` : '';
+    return `<div class="msg-card">
+      <div class="msg-header">
+        <div>
+          <span class="msg-from">${esc(c.author_name)}</span>
+          <span class="msg-email">på <a href="/artikel/${c.article_id}#kommentarer" target="_blank" style="color:var(--accent)">${esc(c.article_title || ('#' + c.article_id))}</a></span>
+        </div>
+        <span class="msg-time">${fmtDate(c.created_at)}</span>
+      </div>
+      <div class="msg-body" style="white-space:pre-wrap">${esc(c.body)}</div>
+      <div class="msg-actions" style="align-items:center;gap:8px">
+        ${statusBadge} ${verdict} ${reason}
+        <div style="flex:1"></div>
+        ${c.status !== 'approved' ? `<button class="btn btn-sm" style="background:#1a3a2a;color:var(--green)" onclick="approveComment(${c.id})">Godkänn</button>` : ''}
+        ${c.status !== 'spam' ? `<button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="rejectComment(${c.id})">Spam</button>` : ''}
+        <button class="btn btn-sm" onclick="deleteComment(${c.id})">Ta bort</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function approveComment(id) { await api('POST', `/api/admin/comments/${id}/approve`); loadComments(cmCurrentView); refresh(); }
+async function rejectComment(id) { await api('POST', `/api/admin/comments/${id}/reject`); loadComments(cmCurrentView); refresh(); }
+async function deleteComment(id) { if (!confirm('Ta bort kommentar?')) return; await api('DELETE', `/api/admin/comments/${id}`); loadComments(cmCurrentView); refresh(); }
+
 // ---- Users ----
 function renderUsers(items) {
   if (!items.length) { document.getElementById('users-content').innerHTML = '<p class="empty">Inga användare.</p>'; return; }
@@ -797,6 +983,107 @@ async function deleteUser(id) {
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ---- Ad banner ----
+let adBannerState = { mode: 'default', image: null, image_mobile: null, url: '/kontakt', alt: '' };
+let adPendingImage = null;
+let adPendingImageMobile = null;
+
+async function loadAdBannerAdmin() {
+  try {
+    const cfg = await api('GET', '/api/admin/ad-banner');
+    adBannerState = cfg;
+    adPendingImage = null;
+    adPendingImageMobile = null;
+    document.getElementById('ad-mode-default').checked = cfg.mode !== 'custom';
+    document.getElementById('ad-mode-custom').checked = cfg.mode === 'custom';
+    document.getElementById('ad-url').value = cfg.url || '/kontakt';
+    document.getElementById('ad-alt').value = cfg.alt || '';
+    document.getElementById('ad-file').value = '';
+    document.getElementById('ad-file-mobile').value = '';
+    updateAdCustomVisibility();
+    renderAdPreview('desktop', cfg.image);
+    renderAdPreview('mobile', cfg.image_mobile);
+    document.getElementById('ad-status').textContent = '';
+  } catch (e) {
+    document.getElementById('ad-status').textContent = 'Kunde inte ladda: ' + e.message;
+  }
+}
+
+function renderAdPreview(which, src, pending) {
+  const isMobile = which === 'mobile';
+  const wrap = document.getElementById(isMobile ? 'ad-preview-mobile-wrap' : 'ad-preview-wrap');
+  const img = document.getElementById(isMobile ? 'ad-preview-mobile' : 'ad-preview');
+  const dims = document.getElementById(isMobile ? 'ad-dims-mobile' : 'ad-dims');
+  if (!src) { wrap.style.display = 'none'; return; }
+  img.src = src;
+  img.onload = () => {
+    dims.textContent = `${img.naturalWidth} × ${img.naturalHeight} px${pending ? ' (väntar på spara)' : ''}`;
+  };
+  wrap.style.display = 'block';
+}
+
+function updateAdCustomVisibility() {
+  const custom = document.getElementById('ad-mode-custom').checked;
+  document.getElementById('ad-custom-fields').style.display = custom ? 'block' : 'none';
+}
+document.addEventListener('change', e => {
+  if (e.target && (e.target.id === 'ad-mode-default' || e.target.id === 'ad-mode-custom')) {
+    updateAdCustomVisibility();
+  }
+  if (e.target && (e.target.id === 'ad-file' || e.target.id === 'ad-file-mobile')) {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (f.type !== 'image/png') { alert('Endast PNG tillåts.'); e.target.value = ''; return; }
+    if (f.size > 4 * 1024 * 1024) { alert('Max 4 MB.'); e.target.value = ''; return; }
+    const isMobile = e.target.id === 'ad-file-mobile';
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (isMobile) { adPendingImageMobile = reader.result; renderAdPreview('mobile', reader.result, true); }
+      else { adPendingImage = reader.result; renderAdPreview('desktop', reader.result, true); }
+    };
+    reader.readAsDataURL(f);
+  }
+});
+
+function clearAdImage() {
+  adPendingImage = null;
+  adBannerState.image = null;
+  document.getElementById('ad-file').value = '';
+  renderAdPreview('desktop', null);
+}
+
+function clearAdImageMobile() {
+  adPendingImageMobile = null;
+  adBannerState.image_mobile = null;
+  document.getElementById('ad-file-mobile').value = '';
+  renderAdPreview('mobile', null);
+}
+
+async function saveAdBanner() {
+  const status = document.getElementById('ad-status');
+  const mode = document.getElementById('ad-mode-custom').checked ? 'custom' : 'default';
+  const url = document.getElementById('ad-url').value.trim() || '/kontakt';
+  const alt = document.getElementById('ad-alt').value.trim();
+  const body = { mode, url, alt };
+  if (adPendingImage) body.image = adPendingImage;
+  else if (adBannerState.image === null) body.image = null;
+  if (adPendingImageMobile) body.image_mobile = adPendingImageMobile;
+  else if (adBannerState.image_mobile === null) body.image_mobile = null;
+  status.textContent = 'Sparar…';
+  try {
+    const r = await api('PUT', '/api/admin/ad-banner', body);
+    adBannerState = r;
+    adPendingImage = null;
+    adPendingImageMobile = null;
+    status.style.color = 'var(--green, #3fb950)';
+    status.textContent = '✓ Sparat';
+    setTimeout(() => { status.textContent = ''; status.style.color = ''; }, 2000);
+  } catch (e) {
+    status.style.color = '#f85149';
+    status.textContent = 'Fel: ' + e.message;
+  }
+}
 </script>
 </body>
 </html>

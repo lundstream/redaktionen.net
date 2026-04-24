@@ -17,7 +17,9 @@ const { XMLParser } = require('fast-xml-parser');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const db = require('./newsroom-db');
+const social = require('./social-poster');
 
 // Agent personas — byline and photo per role / category
 const REPORTERS = {
@@ -804,7 +806,7 @@ ${sourceContent ? `\nKällmaterial:\n${sourceContent}` : '\n(Kunde inte hämta k
       db.articles.update(articleId, {
         ...current,
         status: 'draft',
-        body: current.body + `\n\n---\n[FAKTAKOLL: UNDERKÄND — ${issueNote}]\n${check.corrections || ''}`,
+        body: current.body + `\n\n---\nFAKTAKOLL: UNDERKÄND — ${issueNote}\n${check.corrections || ''}`,
         source_urls: JSON.parse(current.source_urls || '[]'),
       });
       console.log(`[Newsroom] Fact checker REJECTED article ${articleId}: ${issueNote}`);
@@ -815,7 +817,7 @@ ${sourceContent ? `\nKällmaterial:\n${sourceContent}` : '\n(Kunde inte hämta k
       const current = db.articles.get(articleId);
       db.articles.update(articleId, {
         ...current,
-        body: current.body + `\n\n---\n[FAKTAKOLL: Notering — ${(check.issues || []).join('; ')}]`,
+        body: current.body + `\n\n---\nFAKTAKOLL: Notering — ${(check.issues || []).join('; ')}`,
         source_urls: JSON.parse(current.source_urls || '[]'),
       });
     }
@@ -831,26 +833,28 @@ ${sourceContent ? `\nKällmaterial:\n${sourceContent}` : '\n(Kunde inte hämta k
 // ---------------------------------------------------------------------------
 // 6b. REWRITE ARTICLE
 // ---------------------------------------------------------------------------
-async function rewriteArticle(articleId) {
+async function rewriteArticle(articleId, attempt = 1) {
   const article = db.articles.get(articleId);
   if (!article) throw new Error('Artikel hittades inte');
 
-  const cleanBody = article.body.replace(/\n\n---\n\[FAKTAKOLL:[\s\S]*$/m, '');
+  const cleanBody = article.body.replace(/\n\n---\n\[?FAKTAKOLL:[\s\S]*$/m, '');
 
-  let sourceContent = '';
+  // Fetch content from ALL source URLs (not just the first) so the rewrite has full ground truth
   const sourceUrls = JSON.parse(article.source_urls || '[]');
-  if (sourceUrls.length > 0) {
+  const sourceBlocks = [];
+  for (const u of sourceUrls.slice(0, 3)) {
     try {
-      const resp = await fetch(sourceUrls[0], {
+      const resp = await fetch(u, {
         headers: { 'User-Agent': 'Mozilla/5.0 RedaktionenNet/1.0' },
         signal: AbortSignal.timeout(15000),
       });
       if (resp.ok) {
         const html = await resp.text();
-        sourceContent = stripHtml(html).slice(0, 4000);
+        sourceBlocks.push(`[KÄLLA ${u}]\n${stripHtml(html).slice(0, 3500)}`);
       }
     } catch { /* ignore */ }
   }
+  const sourceContent = sourceBlocks.join('\n\n---\n\n');
 
   let research = { summary: '', key_facts: [], additional_urls: [], sources: [] };
   try {
@@ -879,27 +883,33 @@ async function rewriteArticle(articleId) {
   const rewriteResult = await llm([
     {
       role: 'system',
-      content: `Du är reporter på Redaktionen.net. En tidigare version av din artikel hade problem vid faktakoll. Korrigera de specifika problemen — skriv INTE om hela artikeln.
+      content: `Du är reporter på Redaktionen.net och fixar en artikel som blev underkänd i faktakoll.
 
-Gör minimala, kirurgiska ändringar. Behåll struktur, ton och stil.
+REGLER — följ dem strikt:
+1. Använd ENDAST påståenden som tydligt stöds av KÄLLMATERIALET nedan. Om en uppgift inte står i källan — ta bort den eller skriv om den i vagare form ("enligt rapporter", "kan komma att").
+2. Ta bort ALLA konkreta siffror, datum, modellnamn, citat och priser som inte ordagrant finns i källmaterialet.
+3. Om ett påstående i faktakollens problem-lista inte kan verifieras i källan — stryk hela påståendet hellre än att försöka formulera om det.
+4. Behåll artikelns struktur, ton och längd inom ±20%.
+5. Rubrik och ingress måste också stämma med källan.
 
 Svara i JSON: { "title": "...", "summary": "ingress...", "body": "brödtext med \\n\\n för stycken..." }`
     },
     {
       role: 'user',
-      content: `Korrigera de specifika problemen i denna artikel:
+      content: `FAKTAKOLLENS PROBLEM (måste åtgärdas):
+${factIssues ? `- ${factIssues}` : 'Inga specifika problem angivna — gör artikeln generellt mer försiktig med påståenden.'}
 
+NUVARANDE ARTIKEL:
 Rubrik: ${article.title}
 Kategori: ${article.category}
 Ingress: ${article.summary}
 Brödtext:
 ${cleanBody}
 
-${factIssues ? `PROBLEM SOM MÅSTE FIXAS:\n- ${factIssues}` : 'Inga specifika problem angivna.'}
-${sourceContent ? `\nKällmaterial:\n${sourceContent}` : ''}${researchContext}
-Källor: ${sourceUrls.join(', ') || 'okänd'}`
+KÄLLMATERIAL (ground truth — inget i artikeln får motsäga detta):
+${sourceContent || '(Ingen källa kunde hämtas — var extra försiktig, ta bort alla osäkra påståenden.)'}${researchContext}`
     }
-  ], { json: true, temperature: 0.4, max_tokens: 2000, model: agentModel('rewrite') });
+  ], { json: true, temperature: 0.2, max_tokens: 2000, model: agentModel('rewrite') });
 
   let rewritten;
   try {
@@ -930,14 +940,14 @@ Källor: ${sourceUrls.join(', ') || 'okänd'}`
   db.agentLog.create({
     article_id: articleId,
     agent: 'reporter',
-    action: 'rewrite_article',
+    action: `rewrite_article (attempt ${attempt})`,
     input_text: `Omskrivning: ${article.title}`.slice(0, 500),
     output_text: rewriteResult.content.slice(0, 2000),
     model: rewriteResult.model,
     tokens_used: rewriteResult.tokens,
   });
 
-  console.log(`[Newsroom] Reporter rewrote article ${articleId}`);
+  console.log(`[Newsroom] Reporter rewrote article ${articleId} (attempt ${attempt})`);
 
   await copyEditor(articleId);
   console.log(`[Newsroom] Copy editor refined rewritten article ${articleId}`);
@@ -945,7 +955,13 @@ Källor: ${sourceUrls.join(', ') || 'okänd'}`
   const factResult = await factChecker(articleId);
   console.log(`[Newsroom] Fact checker re-checked article ${articleId}: ${factResult.verdict}`);
 
-  return { articleId, verdict: factResult.verdict, issues: factResult.issues || [] };
+  // One automatic retry if still rejected
+  if (factResult.verdict === 'underkänd' && attempt < 2) {
+    console.log(`[Newsroom] Rewrite attempt ${attempt} still underkänd — retrying once more`);
+    return rewriteArticle(articleId, attempt + 1);
+  }
+
+  return { articleId, verdict: factResult.verdict, issues: factResult.issues || [], attempts: attempt };
 }
 
 // ---------------------------------------------------------------------------
@@ -955,22 +971,43 @@ async function searchProductImage(article) {
   const settings = getSettings();
   if (!settings.brave_search_key) return null;
 
-  // Ask LLM if this is about a specific named product
+  // Ask LLM if this article has a concrete visual subject we can find a real image of.
+  // Entity types we can handle:
+  //   product   — named hardware/gadget (phone, GPU, laptop, keyboard, console...)
+  //   software  — named app, OS, game, browser, suite (logo/screenshot)
+  //   ai_model  — named AI model / LLM (logo of vendor or model)
+  //   company   — article centered on one company (logo/HQ)
+  //   person    — one named public figure central to the story
+  //   event     — named conference, keynote, launch event (press photo)
+  // Reject abstract/opinion pieces ("optimization as a concept", industry trends).
   const analysis = await llm([
     {
       role: 'system',
-      content: `Determine if this article is about a specific, named commercial product (a phone, laptop, keyboard, GPU, monitor, headset, etc). If yes, provide the exact product name for an image search. Reply JSON: { "is_product": true, "product_name": "exact product name" } or { "is_product": false }`
+      content: `Classify what kind of real-world image search would best illustrate this article. Reply strict JSON:
+{ "has_subject": true|false, "entity_type": "product|software|ai_model|company|person|event", "subject": "exact search term", "query_hint": "extra keywords like 'logo' / 'screenshot' / 'press photo' / 'keynote'" }
+Rules:
+- Only set has_subject=true if the article is clearly centered on one specific, named thing that has real-world images (e.g. "RTX 5090", "ChatGPT", "Claude 3.7", "Microsoft Copilot", "Sam Altman", "Computex 2026", "Nvidia").
+- For product: subject = full product name; query_hint = "official product photo press image".
+- For software/ai_model: subject = exact name; query_hint = "logo" (preferred — cleaner) or "screenshot".
+- For company: subject = company name; query_hint = "logo".
+- For person: subject = full name; query_hint = "press photo".
+- For event: subject = event name + year if known; query_hint = "keynote press photo".
+- If the article is about an abstract topic, a debate, market trend, or opinion piece, return has_subject=false.
+- REJECT (has_subject=false) articles about: malware/viruses/trojans (e.g. Stuxnet, FAST16, Emotet), named vulnerabilities/CVEs, security exploits, phishing campaigns, APT groups, data breaches, hacking incidents, cyber attacks. These have no reliable real-world imagery and should fall through to AI-generated illustrations.`
     },
     { role: 'user', content: `Title: ${article.title}\nSummary: ${article.summary}\nCategory: ${article.category}` }
-  ], { json: true, temperature: 0, max_tokens: 100, model: agentModel('graphic_designer') });
+  ], { json: true, temperature: 0, max_tokens: 150, model: agentModel('graphic_designer') });
 
   try {
     const parsed = JSON.parse(analysis.content);
-    if (!parsed.is_product || !parsed.product_name) return null;
+    if (!parsed.has_subject || !parsed.subject) return null;
 
-    console.log(`[Newsroom] Searching web for product image: "${parsed.product_name}"`);
-    const query = `${parsed.product_name} official product photo press image`;
-    const url = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=5&safesearch=strict`;
+    const entityType = parsed.entity_type || 'product';
+    const queryHint = parsed.query_hint || '';
+    const query = `${parsed.subject} ${queryHint}`.trim();
+
+    console.log(`[Newsroom] Brave image search (${entityType}): "${query}"`);
+    const url = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=6&safesearch=strict`;
     const resp = await fetch(url, {
       headers: { 'Accept': 'application/json', 'Accept-Encoding': 'gzip', 'X-Subscription-Token': settings.brave_search_key },
       signal: AbortSignal.timeout(10000),
@@ -984,7 +1021,9 @@ async function searchProductImage(article) {
     const data = await resp.json();
     const results = data.results || [];
 
-    // Try to download first valid product image
+    // Try to download first valid image. Logos/screenshots can be small PNGs,
+    // so lower the minimum size threshold for non-product searches.
+    const minBytes = entityType === 'product' ? 5000 : 2000;
     for (const img of results) {
       const imgUrl = img.properties?.url || img.thumbnail?.src;
       if (!imgUrl) continue;
@@ -995,8 +1034,8 @@ async function searchProductImage(article) {
         });
         if (imgResp.ok && (imgResp.headers.get('content-type') || '').includes('image')) {
           const buf = Buffer.from(await imgResp.arrayBuffer());
-          if (buf.length > 5000) { // skip tiny placeholders
-            return { buffer: buf, product: parsed.product_name, source: img.url || img.source || '' };
+          if (buf.length > minBytes) {
+            return { buffer: buf, product: parsed.subject, entityType, source: img.url || img.source || '' };
           }
         }
       } catch (e) {
@@ -1004,7 +1043,7 @@ async function searchProductImage(article) {
       }
     }
 
-    console.log(`[Newsroom] No suitable product image found for "${parsed.product_name}"`);
+    console.log(`[Newsroom] No suitable image found for "${parsed.subject}" (${entityType})`);
     return null;
   } catch (e) {
     console.error(`[Newsroom] Product image search error: ${e.message}`);
@@ -1013,30 +1052,74 @@ async function searchProductImage(article) {
 }
 
 // ---------------------------------------------------------------------------
+// Hero image storage — resize + WebP encode, return /images/articles/ URL.
+// Removes stale .png/.jpg for the same article to avoid orphaned files.
+// Returns { imageUrl, bytesIn, bytesOut } or throws.
+// ---------------------------------------------------------------------------
+async function saveHeroImage(articleId, buffer) {
+  const imgDir = path.join(__dirname, 'public', 'images', 'articles');
+  fs.mkdirSync(imgDir, { recursive: true });
+  const webpName = `article-${articleId}.webp`;
+  const webpPath = path.join(imgDir, webpName);
+
+  // Detect alpha channel — flatten transparent PNGs (e.g. brand logos) onto
+  // a solid dark panel so they don't render as checkerboards on the article page.
+  const meta = await sharp(buffer).metadata();
+  let pipeline = sharp(buffer).rotate();
+  if (meta.hasAlpha) {
+    pipeline = pipeline.flatten({ background: { r: 13, g: 17, b: 23 } }); // --bg
+  }
+  // Resize: max 1600px wide, preserve aspect ratio, no upscaling
+  const out = await pipeline
+    .resize({ width: 1600, withoutEnlargement: true })
+    .webp({ quality: 82, effort: 4 })
+    .toBuffer();
+  fs.writeFileSync(webpPath, out);
+
+  // Clean up any older format for the same article id
+  for (const ext of ['png', 'jpg', 'jpeg']) {
+    const stale = path.join(imgDir, `article-${articleId}.${ext}`);
+    try { if (fs.existsSync(stale)) fs.unlinkSync(stale); } catch {}
+  }
+
+  console.log(`[Newsroom] Hero image for article ${articleId}: ${buffer.length} → ${out.length} bytes (${Math.round(out.length / buffer.length * 100)}%)${meta.hasAlpha ? ' [flattened]' : ''}`);
+  return { imageUrl: `/images/articles/${webpName}`, bytesIn: buffer.length, bytesOut: out.length };
+}
+
+// ---------------------------------------------------------------------------
 // 7. GRAPHIC DESIGNER — generate image
 // ---------------------------------------------------------------------------
-async function graphicDesigner(articleId) {
+async function graphicDesigner(articleId, options = {}) {
   const article = db.articles.get(articleId);
   if (!article) return;
+  const { skipBrave = false } = options;
 
   // Try product image search first (for hardware/product articles)
-  try {
+  if (!skipBrave) try {
     const productImg = await searchProductImage(article);
     if (productImg) {
-      const imgDir = path.join(__dirname, 'public', 'images', 'articles');
-      fs.mkdirSync(imgDir, { recursive: true });
-      const filename = `article-${articleId}.png`;
-      fs.writeFileSync(path.join(imgDir, filename), productImg.buffer);
-      const imageUrl = `/images/articles/${filename}`;
+      const { imageUrl } = await saveHeroImage(articleId, productImg.buffer);
 
       const current = db.articles.get(articleId);
       db.articles.update(articleId, {
         ...current,
         image_url: imageUrl,
-        image_prompt: `Product image: ${productImg.product}`,
+        image_prompt: `Brave ${productImg.entityType || 'product'}: ${productImg.product}`,
         source_urls: JSON.parse(current.source_urls || '[]'),
       });
-      db.agentLog.create({ article_id: articleId, agent: 'graphic_designer', input: `Product: ${productImg.product}`, output: `Web image from: ${productImg.source}` });
+      try {
+        db.agentLog.create({
+          article_id: articleId,
+          agent: 'graphic_designer',
+          action: `brave_${productImg.entityType || 'product'}_image`,
+          input_text: `${productImg.entityType || 'product'}: ${productImg.product}`,
+          output_text: `Web image from: ${productImg.source}`,
+          model: 'brave_search',
+          tokens_used: 0,
+        });
+      } catch (logErr) {
+        console.error(`[Newsroom] agent_log write failed for article ${articleId}: ${logErr.message}`);
+      }
       console.log(`[Newsroom] Used web product image for article ${articleId}: ${productImg.product}`);
       return { imageUrl };
     }
@@ -1161,14 +1244,11 @@ Svara i JSON: { "prompt": "detailed image description in English...", "alt_text"
         }
 
         if (kieResult.url) {
-          const imgDir = path.join(__dirname, 'public', 'images', 'articles');
-          fs.mkdirSync(imgDir, { recursive: true });
           const imgResp = await fetch(kieResult.url, { signal: AbortSignal.timeout(30000) });
           if (imgResp.ok) {
             const buf = Buffer.from(await imgResp.arrayBuffer());
-            const filename = `article-${articleId}.png`;
-            fs.writeFileSync(path.join(imgDir, filename), buf);
-            imageUrl = `/images/articles/${filename}`;
+            const saved = await saveHeroImage(articleId, buf);
+            imageUrl = saved.imageUrl;
             console.log(`[Newsroom] Saved Kie AI image for article ${articleId}`);
           }
         }
@@ -1213,6 +1293,21 @@ async function runNewsCycle() {
   const settings = getSettings();
   const maxPerDay = settings.max_articles_per_day || 18;
 
+  // Time-of-day gating (Stockholm, CET/CEST ~ UTC+2)
+  // Prime 08:00-21:59 -> up to articles_per_cycle (default 2)
+  // Off   22:00-01:59 & 06:00-07:59 -> 1
+  // Quiet 02:00-05:59 -> 0 (skip cycle)
+  const sweHour = (new Date().getUTCHours() + 2 + 24) % 24;
+  let perCycleCap;
+  if (sweHour >= 2 && sweHour < 6) {
+    console.log(`[Newsroom] Quiet hours (Stockholm ${sweHour}:xx) — skipping cycle`);
+    return { skipped: 'quiet_hours' };
+  } else if (sweHour >= 8 && sweHour < 22) {
+    perCycleCap = settings.articles_per_cycle || 2;
+  } else {
+    perCycleCap = 1;
+  }
+
   try {
     console.log('[Newsroom] Scanning sources...');
     const newLeads = await scanSources();
@@ -1237,12 +1332,17 @@ async function runNewsCycle() {
     const selected = await managingEditor(uniqueLeads);
     console.log(`[Newsroom] Selected ${selected.length} stories`);
 
-    // Check daily limit
+    // Check daily limit — hard cap, no buffer. Skip cycle entirely when at/over cap.
     const todayCount = db.articles.todayScheduledCount();
     const remaining = Math.max(0, maxPerDay - todayCount);
-    const toProcess = selected.slice(0, Math.min(selected.length, remaining + 3)); // allow buffer for rejected ones
+    if (remaining === 0) {
+      console.log(`[Newsroom] Daily limit reached (${todayCount}/${maxPerDay}) — skipping cycle`);
+      return { leads: selected.length, articles: 0, published: 0, skipped: 'daily_cap' };
+    }
+    const cycleLimit = Math.min(remaining, perCycleCap);
+    const toProcess = selected.slice(0, Math.min(selected.length, cycleLimit));
     if (toProcess.length < selected.length) {
-      console.log(`[Newsroom] Daily limit (${maxPerDay}): processing ${toProcess.length} of ${selected.length} selected`);
+      console.log(`[Newsroom] Cycle limit ${cycleLimit} (daily ${maxPerDay}, per-cycle ${perCycleCap}, today ${todayCount}): processing ${toProcess.length} of ${selected.length} selected`);
     }
 
     const articleIds = [];
@@ -1310,12 +1410,21 @@ async function runNewsCycle() {
     }
     console.log(`[Newsroom] Generated images for ${forImages.length}/${passedIds.length} articles`);
 
-    // Auto-publish: approve articles immediately
+    // Auto-publish: approve articles immediately, but re-check daily cap
+    // (count may have advanced since cycle start, or drafts from earlier in cycle pushed us over)
     let publishedCount = 0;
     for (const { id } of passedIds) {
+      const nowToday = db.articles.todayScheduledCount();
+      if (nowToday >= maxPerDay) {
+        console.log(`[Newsroom] Daily cap (${maxPerDay}) reached during publish — leaving article ${id} as draft`);
+        continue;
+      }
       db.articles.publishScheduled(id);
       publishedCount++;
-      console.log(`[Newsroom] Published article ${id} immediately`);
+      console.log(`[Newsroom] Published article ${id} immediately (${nowToday + 1}/${maxPerDay} today)`);
+      // Fire-and-forget social broadcast
+      const pub = db.articles.get(id);
+      if (pub) social.broadcast(pub).catch(e => console.error('[Newsroom] social.broadcast error:', e.message));
     }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -1395,6 +1504,8 @@ function runPublishCheck() {
     for (const a of ready) {
       db.articles.publishScheduled(a.id);
       console.log(`[Newsroom] Auto-published article ${a.id}: ${a.title}`);
+      const pub = db.articles.get(a.id);
+      if (pub) social.broadcast(pub).catch(e => console.error('[Newsroom] social.broadcast error:', e.message));
     }
     if (ready.length > 0) console.log(`[Newsroom] Published ${ready.length} scheduled articles`);
   } catch (e) {

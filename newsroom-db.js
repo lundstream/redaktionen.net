@@ -99,6 +99,35 @@ function migrate(db) {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id INTEGER NOT NULL,
+      parent_id INTEGER,
+      author_name TEXT NOT NULL,
+      author_email_hash TEXT,
+      body TEXT NOT NULL,
+      ip_hash TEXT,
+      status TEXT DEFAULT 'pending',
+      ai_verdict TEXT,
+      ai_reason TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (article_id) REFERENCES articles(id),
+      FOREIGN KEY (parent_id) REFERENCES comments(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_comments_article ON comments(article_id, status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status, created_at);
+
+    CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      token TEXT NOT NULL UNIQUE,
+      confirmed INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')),
+      unsubscribed_at TEXT,
+      last_sent_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_news_sub_active ON newsletter_subscribers(unsubscribed_at);
   `);
 
   // --- Migrations for new columns ---
@@ -108,6 +137,21 @@ function migrate(db) {
   try { db.exec('ALTER TABLE articles ADD COLUMN content_hash TEXT'); } catch {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_articles_publish_at ON articles(publish_at)'); } catch {}
   try { db.exec('CREATE INDEX IF NOT EXISTS idx_articles_content_hash ON articles(content_hash)'); } catch {}
+
+  // Broadcast log — one row per platform attempt, so admin can see failures
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS broadcast_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id INTEGER NOT NULL,
+      platform TEXT NOT NULL,
+      status TEXT NOT NULL,
+      detail TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (article_id) REFERENCES articles(id)
+    )`);
+    db.exec('CREATE INDEX IF NOT EXISTS idx_broadcast_article ON broadcast_log(article_id)');
+    db.exec('CREATE INDEX IF NOT EXISTS idx_broadcast_status ON broadcast_log(status, created_at)');
+  } catch {}
 
   // Seed default sources if empty
   const count = db.prepare('SELECT COUNT(*) as c FROM sources').get().c;
@@ -181,16 +225,25 @@ const articles = {
   schedule: (id, publishAt) => getDb().prepare("UPDATE articles SET status='scheduled', publish_at=?, updated_at=datetime('now') WHERE id=?").run(publishAt, id),
   publishScheduled: (id) => getDb().prepare("UPDATE articles SET status='approved', published_at=datetime('now'), updated_at=datetime('now') WHERE id=?").run(id),
   publishAllScheduled: () => getDb().prepare("UPDATE articles SET status='approved', published_at=datetime('now'), updated_at=datetime('now') WHERE status='scheduled'").run(),
-  todayApprovedCount: () => getDb().prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'approved' AND date(published_at) = date('now')").get().c,
+  todayApprovedCount: () => getDb().prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'approved' AND date(published_at, '+2 hours') = date('now', '+2 hours')").get().c,
   todayScheduledCount: () => {
     const d = getDb();
-    const approved = d.prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'approved' AND date(published_at) = date('now')").get().c;
-    const scheduled = d.prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'scheduled' AND date(publish_at) = date('now')").get().c;
+    const approved = d.prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'approved' AND date(published_at, '+2 hours') = date('now', '+2 hours')").get().c;
+    const scheduled = d.prepare("SELECT COUNT(*) as c FROM articles WHERE status = 'scheduled' AND date(publish_at, '+2 hours') = date('now', '+2 hours')").get().c;
     return approved + scheduled;
   },
   // View tracking
   incrementViews: (id) => getDb().prepare('UPDATE articles SET views = COALESCE(views, 0) + 1 WHERE id = ?').run(id),
   mostViewed: (limit, days) => getDb().prepare(`SELECT * FROM articles WHERE status = 'approved' AND published_at >= datetime('now', '-' || ? || ' days') ORDER BY views DESC LIMIT ?`).all(days || 7, limit || 10),
+  mostCommented: (limit, days) => getDb().prepare(`
+    SELECT a.*, COUNT(c.id) AS comment_count
+    FROM articles a
+    JOIN comments c ON c.article_id = a.id AND c.status = 'approved'
+    WHERE a.status = 'approved' AND a.published_at >= datetime('now', '-' || ? || ' days')
+    GROUP BY a.id
+    ORDER BY comment_count DESC, a.published_at DESC
+    LIMIT ?
+  `).all(days || 30, limit || 5),
   // Search
   search: (q, limit) => getDb().prepare("SELECT * FROM articles WHERE status = 'approved' AND (title LIKE '%' || ? || '%' OR summary LIKE '%' || ? || '%') ORDER BY published_at DESC LIMIT ?").all(q, q, limit || 20),
   // Deduplication
@@ -255,4 +308,52 @@ const meta = {
   set: (key, value) => getDb().prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value),
 };
 
-module.exports = { getDb, sources, leads, articles, agentLog, messages, adminUsers, meta };
+const comments = {
+  create: (c) => getDb().prepare(
+    'INSERT INTO comments (article_id, parent_id, author_name, author_email_hash, body, ip_hash, status, ai_verdict, ai_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(c.article_id, c.parent_id || null, c.author_name, c.author_email_hash || null, c.body, c.ip_hash || null, c.status || 'pending', c.ai_verdict || null, c.ai_reason || null),
+  forArticle: (articleId) => getDb().prepare(
+    "SELECT id, article_id, parent_id, author_name, author_email_hash, body, created_at FROM comments WHERE article_id = ? AND status = 'approved' ORDER BY created_at ASC"
+  ).all(articleId),
+  countForArticle: (articleId) => getDb().prepare(
+    "SELECT COUNT(*) as c FROM comments WHERE article_id = ? AND status = 'approved'"
+  ).get(articleId).c,
+  recentFromIp: (ipHash, seconds) => getDb().prepare(
+    "SELECT COUNT(*) as c FROM comments WHERE ip_hash = ? AND created_at >= datetime('now', '-' || ? || ' seconds')"
+  ).get(ipHash, seconds).c,
+  pending: () => getDb().prepare(
+    "SELECT c.*, a.title AS article_title FROM comments c LEFT JOIN articles a ON a.id = c.article_id WHERE c.status = 'pending' ORDER BY c.created_at DESC"
+  ).all(),
+  all: (limit, offset) => getDb().prepare(
+    "SELECT c.*, a.title AS article_title FROM comments c LEFT JOIN articles a ON a.id = c.article_id ORDER BY c.created_at DESC LIMIT ? OFFSET ?"
+  ).all(limit || 50, offset || 0),
+  get: (id) => getDb().prepare("SELECT * FROM comments WHERE id = ?").get(id),
+  setStatus: (id, status) => getDb().prepare("UPDATE comments SET status = ? WHERE id = ?").run(status, id),
+  delete: (id) => getDb().prepare("DELETE FROM comments WHERE id = ?").run(id),
+  pendingCount: () => getDb().prepare("SELECT COUNT(*) as c FROM comments WHERE status = 'pending'").get().c,
+  totalApproved: () => getDb().prepare("SELECT COUNT(*) as c FROM comments WHERE status = 'approved'").get().c,
+};
+
+const newsletter = {
+  subscribe: (email, token) => getDb().prepare(
+    "INSERT INTO newsletter_subscribers (email, token, confirmed, unsubscribed_at) VALUES (?, ?, 1, NULL) ON CONFLICT(email) DO UPDATE SET unsubscribed_at = NULL, token = excluded.token"
+  ).run(email, token),
+  getByEmail: (email) => getDb().prepare("SELECT * FROM newsletter_subscribers WHERE email = ?").get(email),
+  getByToken: (token) => getDb().prepare("SELECT * FROM newsletter_subscribers WHERE token = ?").get(token),
+  unsubscribeByToken: (token) => getDb().prepare(
+    "UPDATE newsletter_subscribers SET unsubscribed_at = datetime('now') WHERE token = ?"
+  ).run(token),
+  activeCount: () => getDb().prepare("SELECT COUNT(*) as c FROM newsletter_subscribers WHERE unsubscribed_at IS NULL AND confirmed = 1").get().c,
+  allActive: () => getDb().prepare("SELECT * FROM newsletter_subscribers WHERE unsubscribed_at IS NULL AND confirmed = 1 ORDER BY created_at").all(),
+  markSent: (id) => getDb().prepare("UPDATE newsletter_subscribers SET last_sent_at = datetime('now') WHERE id = ?").run(id),
+};
+
+// --- BROADCAST LOG — per-platform social posting outcomes ---
+const broadcastLog = {
+  record: (articleId, platform, status, detail) =>
+    getDb().prepare('INSERT INTO broadcast_log (article_id, platform, status, detail) VALUES (?, ?, ?, ?)').run(articleId, platform, status, detail || null),
+  forArticle: (articleId) =>
+    getDb().prepare('SELECT * FROM broadcast_log WHERE article_id = ? ORDER BY created_at').all(articleId),
+};
+
+module.exports = { getDb, sources, leads, articles, agentLog, messages, adminUsers, meta, comments, newsletter, broadcastLog };
